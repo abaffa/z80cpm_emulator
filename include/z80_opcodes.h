@@ -215,52 +215,52 @@ enum CodesED
     ((MSB(cpu->registers.AF) ^ Rg ^ LSB(J)) & H_FLAG))
 
 #define M_CALL(cpu, mem)         \
-    SET_LSB(J, OpZ80(z80, mem, cpu->registers.PC)); \
-    SET_MSB(J, OpZ80(z80, mem, cpu->registers.PC)); \
-    WrZ80(mem, cpu->registers.SP - 1, MSB(cpu->registers.PC)); \
-    WrZ80(mem, cpu->registers.SP - 2, LSB(cpu->registers.PC)); \
+    SET_LSB(J, this->OpZ80(mem, cpu->registers.PC)); \
+    SET_MSB(J, this->OpZ80(mem, cpu->registers.PC)); \
+	this->WrZ80(mem, cpu->registers.SP - 1, MSB(cpu->registers.PC)); \
+    this->WrZ80(mem, cpu->registers.SP - 2, LSB(cpu->registers.PC)); \
     cpu->registers.SP -= 2; \
     cpu->registers.PC = J; \
-    JumpZ80(z80, J)
+    this->JumpZ80(J)
 
 #define M_RET(cpu, mem)         \
-    SET_LSB(cpu->registers.PC, RdZ80(mem, cpu->registers.SP));  \
-    SET_MSB(cpu->registers.PC, RdZ80(mem, cpu->registers.SP + 1));  \
+    SET_LSB(cpu->registers.PC, this->RdZ80(mem, cpu->registers.SP));  \
+    SET_MSB(cpu->registers.PC, this->RdZ80(mem, cpu->registers.SP + 1));  \
     cpu->registers.SP += 2; \
-    JumpZ80(z80, cpu->registers.PC)
+    this->JumpZ80( cpu->registers.PC)
 
 
 #define M_JR(cpu, mem)         \
-    cpu->registers.PC += (signed char)RdZ80(mem, cpu->registers.PC) + 1;  \
-    JumpZ80(z80, cpu->registers.PC)
+    cpu->registers.PC += (signed char)this->RdZ80(mem, cpu->registers.PC) + 1;  \
+    this->JumpZ80( cpu->registers.PC)
 
 #define M_JP(cpu, mem)         \
-    SET_LSB(J, OpZ80(cpu, mem, cpu->registers.PC));  \
-    SET_MSB(J, OpZ80(cpu, mem, cpu->registers.PC));    \
+    SET_LSB(J, this->OpZ80(mem, cpu->registers.PC));  \
+    SET_MSB(J, this->OpZ80(mem, cpu->registers.PC));    \
     cpu->registers.PC = J;          \
-    JumpZ80(z80, cpu->registers.PC)
+    this->JumpZ80( cpu->registers.PC)
 
 #define S(cpu, Fl) SET_LSB(cpu->registers.AF, LSB(cpu->registers.AF) | LSB(Fl))
 #define R(cpu, Fl) SET_LSB(cpu->registers.AF, LSB(cpu->registers.AF) & (~LSB(Fl)))
 
 #define M_RST(cpu, mem, Ad)      \
-  WrZ80(mem, cpu->registers.SP - 1, MSB(cpu->registers.PC)); \
-  WrZ80(mem, cpu->registers.SP - 2, LSB(cpu->registers.PC)); \
+  this->WrZ80(mem, cpu->registers.SP - 1, MSB(cpu->registers.PC)); \
+  this->WrZ80(mem, cpu->registers.SP - 2, LSB(cpu->registers.PC)); \
   cpu->registers.SP -= 2; \
   cpu->registers.PC = Ad; \
-  JumpZ80(z80, Ad)
+  this->JumpZ80( Ad)
 
 
 
 #define M_PUSH(cpu, mem, Rg)     \
-  WrZ80(mem, cpu->registers.SP - 1, MSB(cpu->registers.Rg)); \
-  WrZ80(mem, cpu->registers.SP - 2, LSB(cpu->registers.Rg)); \
+  this->WrZ80(mem, cpu->registers.SP - 1, MSB(cpu->registers.Rg)); \
+  this->WrZ80(mem, cpu->registers.SP - 2, LSB(cpu->registers.Rg)); \
   cpu->registers.SP -= 2
 
 
 #define M_POP(cpu, mem, Rg)      \
-  SET_LSB(cpu->registers.Rg, RdZ80(mem, cpu->registers.SP)); \
-  SET_MSB(cpu->registers.Rg, RdZ80(mem, cpu->registers.SP + 1)); \
+  SET_LSB(cpu->registers.Rg, this->RdZ80(mem, cpu->registers.SP)); \
+  SET_MSB(cpu->registers.Rg, this->RdZ80(mem, cpu->registers.SP + 1)); \
   cpu->registers.SP += 2 
 
 
@@ -446,8 +446,8 @@ enum CodesED
 #define M_RES_L(cpu, Bit,Rg) SET_LSB(Rg, LSB(Rg) & ~(1 << Bit))
 
 #define M_LDWORD(cpu, mem, Rg)  \
-    SET_WORD(Rg, RdZ80(mem, cpu->registers.PC),  \
-     RdZ80(mem, cpu->registers.PC + 1)); \
+    SET_WORD(Rg, this->RdZ80(mem, cpu->registers.PC),  \
+     this->RdZ80(mem, cpu->registers.PC + 1)); \
      cpu->registers.PC += 2
 
       

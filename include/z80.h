@@ -42,8 +42,9 @@ using namespace std;
 #define IFF_EI      0x20       /* 1: EI pending              */
 #define IFF_HALT    0x80       /* 1: CPU HALTed              */
 
-struct z80
+class Z80
 {
+public:
     //struct z80_memory memory;
     struct z80_registers registers;
 
@@ -72,28 +73,51 @@ struct z80
     unsigned char PORT_BFFEh;// = 0x0;
     unsigned char PORT_7FFEh;// = 0x0;
 
+	struct z80cpm_memory *z80cpm_memory;
 	struct hw_ide hw_ide;
-	HW_TTY& hw_tty;
+	HW_TTY hw_tty;
 	
 	queue<unsigned char> keyboard_queue;
+
+	void z80_init();
+	void z80_exec(struct z80cpm_memory* z80cpm_memory);
+	void z80_reset();
+
+	unsigned char RdZ80(struct z80cpm_memory* z80cpm_memory, unsigned short Address);
+	void WrZ80(struct z80cpm_memory* z80cpm_memory, unsigned short Address, unsigned char V);
+
+	void IntZ80(struct z80cpm_memory* z80cpm_memory, unsigned short Vector);
+	void JumpZ80(unsigned short PC);
+
+	unsigned char InZ80(unsigned short Port);
+
+	//void OutZ80(unsigned short Port, unsigned char Value);
+	void OutZ80(struct z80cpm_memory* z80cpm_memory, unsigned short Port, unsigned char Value);
+
+private:
+	unsigned char Z80::OpZ80(struct z80cpm_memory* z80cpm_memory, unsigned short A);
+	unsigned short Z80::LoopZ80();
+
+	void Z80::debug_opcode(char *op, char *desc);
+	void debug_opcode_reg_word(struct z80cpm_memory* z80cpm_memory, char *op, char *desc);
+	void debug_opcode_reg_byte(struct z80cpm_memory* z80cpm_memory, char *op, char *desc);
+	void debug_opcode_reg_byte_byte(struct z80cpm_memory* z80cpm_memory, char *op, char *desc);
+	void disassembly_current_opcode(struct z80cpm_memory* z80cpm_memory, unsigned char current_opcode);
+
+
+	void z80_exec_main_code(unsigned char opcode, struct z80cpm_memory* z80cpm_memory);
+	void z80_exec_extended_CB(struct z80cpm_memory* z80cpm_memory);
+	void z80_exec_extended_DD(struct z80cpm_memory* z80cpm_memory);
+	void z80_exec_extended_ED(struct z80cpm_memory* z80cpm_memory);
+	void z80_exec_extended_FD(struct z80cpm_memory* z80cpm_memory);
+
+	void z80_exec_extended_DDCB(struct z80cpm_memory* z80cpm_memory);
+	void z80_exec_extended_FDCB(struct z80cpm_memory* z80cpm_memory);
 };
 
 
 
-void z80_init(struct z80* z80);
-void z80_exec(struct z80* z80, struct z80cpm_memory* z80cpm_memory);
-void z80_reset(struct z80 *z80);
 
-unsigned char RdZ80(struct z80cpm_memory* z80cpm_memory, unsigned short Address);
-void WrZ80(struct z80cpm_memory* z80cpm_memory, unsigned short Address, unsigned char V);
-
-void IntZ80(struct z80* z80, struct z80cpm_memory* z80cpm_memory, unsigned short Vector);
-void JumpZ80(struct z80* z80, unsigned short PC);
-
-unsigned char InZ80(struct z80* z80, unsigned short Port);
-
-//void OutZ80(struct z80* z80, unsigned short Port, unsigned char Value);
-void OutZ80(struct z80* z80, struct z80cpm_memory* z80cpm_memory, unsigned short Port, unsigned char Value);
 
 
 #endif

@@ -400,15 +400,15 @@ char* strlower(char* s)
 	return s;
 }
 
-void z80_init(struct z80* z80)
+void Z80::z80_init()
 {
-	memset(z80, 0, sizeof(struct z80));
+	//memset(z80, 0, sizeof(struct z80));
 
-	z80->registers.PC = 0;
-	//z80->registers.PC = Z80_PROGRAM_LOAD_ADDRESS;
+	this->registers.PC = 0;
+	//this->registers.PC = Z80_PROGRAM_LOAD_ADDRESS;
 
-	hw_ide_init(&z80->hw_ide);
-	hw_ide_load_disk(z80->hw_ide.memory);
+	hw_ide_init(&this->hw_ide);
+	hw_ide_load_disk(this->hw_ide.memory);
 
 
 
@@ -470,52 +470,52 @@ void z80_init(struct z80* z80)
 
 
 	//if (this->cpu.config.SERVER) {
-		z80->hw_tty.start_server(&z80->keyboard_queue);
+		this->hw_tty.start_server(&this->keyboard_queue);
 	//}
 
 }
 
-void z80_reset(struct z80 *z80)
+void Z80::z80_reset()
 {
-	z80->registers.AF = 0x0000;
-	z80->registers.BC = 0x0000;
-	z80->registers.DE = 0x0000;
-	z80->registers.HL = 0x0000;
+	this->registers.AF = 0x0000;
+	this->registers.BC = 0x0000;
+	this->registers.DE = 0x0000;
+	this->registers.HL = 0x0000;
 
-	z80->registers.AFl = 0x0000;
-	z80->registers.BCl = 0x0000;
-	z80->registers.DEl = 0x0000;
-	z80->registers.HLl = 0x0000;
+	this->registers.AFl = 0x0000;
+	this->registers.BCl = 0x0000;
+	this->registers.DEl = 0x0000;
+	this->registers.HLl = 0x0000;
 
-	z80->registers.IX = 0x0000;
-	z80->registers.IY = 0x0000;
-	z80->registers.SP = 0x0000;
-	//z80->registers.SP     = 0xF000;
-	//z80->registers.SP     = 0x00F0;
+	this->registers.IX = 0x0000;
+	this->registers.IY = 0x0000;
+	this->registers.SP = 0x0000;
+	//this->registers.SP     = 0xF000;
+	//this->registers.SP     = 0x00F0;
 
-	z80->registers.I = 0x00;
-	z80->registers.R = 0x00;
+	this->registers.I = 0x00;
+	this->registers.R = 0x00;
 
-	z80->registers.PC = 0x0000;
+	this->registers.PC = 0x0000;
 
-	z80->registers.IFF = 0x00;
-	z80->ICount = z80->IPeriod;
-	z80->IRequest = INT_NONE;
-	z80->IBackup = 0;
+	this->registers.IFF = 0x00;
+	this->ICount = this->IPeriod;
+	this->IRequest = INT_NONE;
+	this->IBackup = 0;
 
-	JumpZ80(z80, z80->registers.PC);
+	this->JumpZ80( this->registers.PC);
 
 
 
-	z80->PORT_0002h = 0xFF;
-	z80->PORT_FEFEh = 0xFF;
-	z80->PORT_FDFEh = 0xFF;
-	z80->PORT_FBFEh = 0xFF;
-	z80->PORT_F7FEh = 0xFF;
-	z80->PORT_EFFEh = 0xFF;
-	z80->PORT_DFFEh = 0xFF;
-	z80->PORT_BFFEh = 0xFF;
-	z80->PORT_7FFEh = 0xFF;
+	this->PORT_0002h = 0xFF;
+	this->PORT_FEFEh = 0xFF;
+	this->PORT_FDFEh = 0xFF;
+	this->PORT_FBFEh = 0xFF;
+	this->PORT_F7FEh = 0xFF;
+	this->PORT_EFFEh = 0xFF;
+	this->PORT_DFFEh = 0xFF;
+	this->PORT_BFFEh = 0xFF;
+	this->PORT_7FFEh = 0xFF;
 
 }
 
@@ -533,15 +533,15 @@ void z80_reset(struct z80 *z80)
 
 
 /////
-unsigned char OpZ80(struct z80* z80, struct z80cpm_memory* z80cpm_memory, unsigned short A)
+unsigned char Z80::OpZ80(struct z80cpm_memory* z80cpm_memory, unsigned short A)
 {
-	unsigned char b = RdZ80(z80cpm_memory, A);   //(RAM[A>>13][A&0x1FFF]); 
-	z80->registers.PC++;
+	unsigned char b = this->RdZ80(z80cpm_memory, A);   //(RAM[A>>13][A&0x1FFF]); 
+	this->registers.PC++;
 	return b;
 }
 
 
-unsigned char RdZ80(struct z80cpm_memory* z80cpm_memory, unsigned short Address) {
+unsigned char Z80::RdZ80(struct z80cpm_memory* z80cpm_memory, unsigned short Address) {
 	unsigned short A = Address;
 	unsigned char value = 0x00;
 
@@ -571,7 +571,7 @@ unsigned char RdZ80(struct z80cpm_memory* z80cpm_memory, unsigned short Address)
 	return value;  //(RAM[A>>13][A&0x1FFF]); 
 }
 
-void WrZ80(struct z80cpm_memory* z80cpm_memory, unsigned short Address, unsigned char V)
+void Z80::WrZ80(struct z80cpm_memory* z80cpm_memory, unsigned short Address, unsigned char V)
 {
 	unsigned short A = Address;
 
@@ -598,7 +598,7 @@ void WrZ80(struct z80cpm_memory* z80cpm_memory, unsigned short Address, unsigned
 unsigned char konamicode[] = { 0x18, 0x04, 0xC4, 0x01, 0x18, 0x02 };
 int current_konamicode = 0;
 
-void OutZ80(struct z80* z80, struct z80cpm_memory* z80cpm_memory, unsigned short Port, unsigned char Value) {
+void Z80::OutZ80(struct z80cpm_memory* z80cpm_memory, unsigned short Port, unsigned char Value) {
 
 
 	if ((Port & 0b11111000) == 0b00111000) { //38-3F
@@ -607,37 +607,37 @@ void OutZ80(struct z80* z80, struct z80cpm_memory* z80cpm_memory, unsigned short
 
 	if ((Port & 0b11111000) == 0b010000)
 	{
-		z80->hw_ide.data[Port & 0b111] = Value;
+		this->hw_ide.data[Port & 0b111] = Value;
 
 		if ((Port & 0b111) == 0) {
-			hw_ide_write(&z80->hw_ide);
+			hw_ide_write(&this->hw_ide);
 		}
 
 		// SET HD NEW STATUS AFTER LOG
-		if (z80->hw_ide.data[7] == 0x04) { // RESET IDE
-			z80->hw_ide.data[7] = 0x0; // 0x80 ==busy// is ready again
+		if (this->hw_ide.data[7] == 0x04) { // RESET IDE
+			this->hw_ide.data[7] = 0x0; // 0x80 ==busy// is ready again
 		}
 
-		else if (z80->hw_ide.data[7] == 0xEF) { // SET FEATURE COMMAND
-			z80->hw_ide.data[7] = 0x00; // is ready again
+		else if (this->hw_ide.data[7] == 0xEF) { // SET FEATURE COMMAND
+			this->hw_ide.data[7] = 0x00; // is ready again
 		}
 
-		else if (z80->hw_ide.data[7] == 0xE6) { // SLEEP
-			z80->hw_ide.data[7] = 0x00;// zerar 
-			//z80->hw_ide.data[7] = 0x80; // is ready again
+		else if (this->hw_ide.data[7] == 0xE6) { // SLEEP
+			this->hw_ide.data[7] = 0x00;// zerar 
+			//this->hw_ide.data[7] = 0x80; // is ready again
 		}
 
-		else if (z80->hw_ide.data[7] == 0x20) { // read sector cmd
-			z80->hw_ide.data[7] = 0b00001000;
-			hw_ide_reset(&z80->hw_ide);
+		else if (this->hw_ide.data[7] == 0x20) { // read sector cmd
+			this->hw_ide.data[7] = 0b00001000;
+			hw_ide_reset(&this->hw_ide);
 		}
-		else if (z80->hw_ide.data[7] == 0x30) { // write sector cmd
-			z80->hw_ide.data[7] = 0b00001000;
-			hw_ide_reset(&z80->hw_ide);
+		else if (this->hw_ide.data[7] == 0x30) { // write sector cmd
+			this->hw_ide.data[7] = 0b00001000;
+			hw_ide_reset(&this->hw_ide);
 		}
 
 		char log_ide[255];
-		hw_ide_print(&z80->hw_ide, (char*)"WRITE", (Port & 0b111), log_ide);
+		hw_ide_print(&this->hw_ide, (char*)"WRITE", (Port & 0b111), log_ide);
 		//printf("%s", log_ide);
 	}
 	else if ((Port & 0b11111000) == 0b00)
@@ -645,12 +645,12 @@ void OutZ80(struct z80* z80, struct z80cpm_memory* z80cpm_memory, unsigned short
 		if ((Port & 0x03) == 0x0) {
 			printf("%c", Value);
 
-			z80->hw_tty.send(Value);
+			this->hw_tty.send(Value);
 		}
 		else if ((Port & 0x03) == 0x3) {
 			//printf("%x\n", Value);
 			if (current_konamicode >= 6) {
-				z80->keyboard_int = Value;
+				this->keyboard_int = Value;
 				current_konamicode = 0;				
 			}
 
@@ -660,7 +660,7 @@ void OutZ80(struct z80* z80, struct z80cpm_memory* z80cpm_memory, unsigned short
 				current_konamicode = 0;
 		}
 }
-unsigned char InZ80(struct z80* z80, unsigned short Port) {
+unsigned char Z80::InZ80(unsigned short Port) {
 
 	unsigned char value = 0xFF;
 
@@ -668,48 +668,48 @@ unsigned char InZ80(struct z80* z80, unsigned short Port) {
 	if ((Port & 0b11111000) == 0b00000000) { //00-07
 		if ((Port & 0x03) == 0x00)
 		{
-			z80->IRequest = INT_NONE;
-			//z80->PORT_0002h = 0x00;
-			value = z80->PORT_0002h;
-			z80->PORT_0002h = 0xFF;
+			this->IRequest = INT_NONE;
+			//this->PORT_0002h = 0x00;
+			value = this->PORT_0002h;
+			this->PORT_0002h = 0xFF;
 		}
 	}
 	else if ((Port & 0b11111000) == 0b00010000) { //10-17
 		if ((Port & 0b111) == 0)
-			hw_ide_read(&z80->hw_ide);
+			hw_ide_read(&this->hw_ide);
 
 		char log_ide[255];
-		hw_ide_print(&z80->hw_ide, (char*)"READ ", (Port & 0b111), log_ide);
+		hw_ide_print(&this->hw_ide, (char*)"READ ", (Port & 0b111), log_ide);
 		//if((Port & 0b111) == 0b111) printf("%s", log_ide);
 
-		value = z80->hw_ide.data[Port & 0b111];
+		value = this->hw_ide.data[Port & 0b111];
 
 	}
 
 	/*
 	if(Port == 0xFEFE)
-		return z80->PORT_FEFEh;
+		return this->PORT_FEFEh;
 
 	if(Port == 0xFDFE)
-		return z80->PORT_FDFEh;
+		return this->PORT_FDFEh;
 
 	if(Port == 0xFBFE)
-		return z80->PORT_FBFEh;
+		return this->PORT_FBFEh;
 
 	if(Port == 0xF7FE)
-		return z80->PORT_F7FEh;
+		return this->PORT_F7FEh;
 
 	if(Port == 0xEFFE)
-		return z80->PORT_EFFEh;
+		return this->PORT_EFFEh;
 
 	if(Port == 0xDFFE)
-		return z80->PORT_DFFEh;
+		return this->PORT_DFFEh;
 
 	if(Port == 0xBFFE)
-		return z80->PORT_BFFEh;
+		return this->PORT_BFFEh;
 
 	if(Port == 0x7FFE)
-		return z80->PORT_7FFEh;
+		return this->PORT_7FFEh;
 
 	return 0x7F;
 	*/
@@ -719,130 +719,130 @@ unsigned char InZ80(struct z80* z80, unsigned short Port) {
 // ALU
 
 
-void JumpZ80(struct z80* z80, unsigned short PC) {}
+void Z80::JumpZ80(unsigned short PC) {}
 
 
-unsigned short LoopZ80(struct z80* z80) { return INT_NONE; }
+unsigned short Z80::LoopZ80() { return INT_NONE; }
 
 
-void IntZ80(struct z80* z80, struct z80cpm_memory* z80cpm_memory, unsigned short Vector)
+void Z80::IntZ80(struct z80cpm_memory* z80cpm_memory, unsigned short Vector)
 {
 
 	/* If HALTed, take CPU off HALT instruction */
-	if (z80->registers.IFF & IFF_HALT) { z80->registers.PC++; z80->registers.IFF &= ~IFF_HALT; }
+	if (this->registers.IFF & IFF_HALT) { this->registers.PC++; this->registers.IFF &= ~IFF_HALT; }
 
-	if ((z80->registers.IFF & IFF_1) || (Vector == INT_NMI))
+	if ((this->registers.IFF & IFF_1) || (Vector == INT_NMI))
 	{
 		/* Save PC on stack */
-		M_PUSH(z80, z80cpm_memory, PC);
+		M_PUSH(this, z80cpm_memory, PC);
 
 		/* Automatically reset IRequest if needed */
-		if (z80->IAutoReset && (Vector == z80->IRequest))
-			z80->IRequest = INT_NONE;
+		if (this->IAutoReset && (Vector == this->IRequest))
+			this->IRequest = INT_NONE;
 
 		/* If it is NMI... */
 		if (Vector == INT_NMI)
 		{
 			/* Clear IFF1 */
-			z80->registers.IFF &= ~(IFF_1 | IFF_EI);
+			this->registers.IFF &= ~(IFF_1 | IFF_EI);
 			/* Jump to hardwired NMI vector */
-			z80->registers.PC = 0x0066;
-			JumpZ80(z80, 0x0066);
+			this->registers.PC = 0x0066;
+			this->JumpZ80( 0x0066);
 			/* Done */
 			return;
 		}
 
 		/* Further interrupts off */
-		z80->registers.IFF &= ~(IFF_1 | IFF_2 | IFF_EI);
+		this->registers.IFF &= ~(IFF_1 | IFF_2 | IFF_EI);
 
 		/* If in IM2 mode... */
-		if (z80->registers.IFF & IFF_IM2)
+		if (this->registers.IFF & IFF_IM2)
 		{
 			/* Make up the vector address */
-			Vector = (Vector & 0xFF) | ((unsigned short)(z80->registers.I) << 8);
+			Vector = (Vector & 0xFF) | ((unsigned short)(this->registers.I) << 8);
 			/* Read the vector */
 
-			SET_LSB(z80->registers.PC, RdZ80(z80cpm_memory, Vector++));
-			SET_MSB(z80->registers.PC, RdZ80(z80cpm_memory, Vector));
-			JumpZ80(z80, z80->registers.PC);
+			SET_LSB(this->registers.PC, RdZ80(z80cpm_memory, Vector++));
+			SET_MSB(this->registers.PC, RdZ80(z80cpm_memory, Vector));
+			this->JumpZ80( this->registers.PC);
 			/* Done */
 			return;
 		}
 
 		/* If in IM1 mode, just jump to hardwired IRQ vector */
-		if (z80->registers.IFF & IFF_IM1) { z80->registers.PC = 0x0038; JumpZ80(z80, 0x0038); return; }
+		if (this->registers.IFF & IFF_IM1) { this->registers.PC = 0x0038; this->JumpZ80( 0x0038); return; }
 
 		/* If in IM0 mode... */
 
 		/* Jump to a vector */
 		switch (Vector)
 		{
-		case INT_RST00: z80->registers.PC = 0x0000; JumpZ80(z80, 0x0000); break;
-		case INT_RST08: z80->registers.PC = 0x0008; JumpZ80(z80, 0x0008); break;
-		case INT_RST10: z80->registers.PC = 0x0010; JumpZ80(z80, 0x0010); break;
-		case INT_RST18: z80->registers.PC = 0x0018; JumpZ80(z80, 0x0018); break;
-		case INT_RST20: z80->registers.PC = 0x0020; JumpZ80(z80, 0x0020); break;
-		case INT_RST28: z80->registers.PC = 0x0028; JumpZ80(z80, 0x0028); break;
-		case INT_RST30: z80->registers.PC = 0x0030; JumpZ80(z80, 0x0030); break;
-		case INT_RST38: z80->registers.PC = 0x0038; JumpZ80(z80, 0x0038); break;
+		case INT_RST00: this->registers.PC = 0x0000; this->JumpZ80( 0x0000); break;
+		case INT_RST08: this->registers.PC = 0x0008; this->JumpZ80( 0x0008); break;
+		case INT_RST10: this->registers.PC = 0x0010; this->JumpZ80( 0x0010); break;
+		case INT_RST18: this->registers.PC = 0x0018; this->JumpZ80( 0x0018); break;
+		case INT_RST20: this->registers.PC = 0x0020; this->JumpZ80( 0x0020); break;
+		case INT_RST28: this->registers.PC = 0x0028; this->JumpZ80( 0x0028); break;
+		case INT_RST30: this->registers.PC = 0x0030; this->JumpZ80( 0x0030); break;
+		case INT_RST38: this->registers.PC = 0x0038; this->JumpZ80( 0x0038); break;
 		}
 	}
 }
 
 
-void debug_opcode(struct z80* z80, char *op, char *desc) {
+void Z80::debug_opcode(char *op, char *desc) {
 	if (DEBUG_OPCODE == 1) {
-		sprintf(z80->last_op_desc, "opcode: %s\n%s\n\n", op, desc);
-		//printf("%s", z80->last_op_desc);
+		sprintf(this->last_op_desc, "opcode: %s\n%s\n\n", op, desc);
+		//printf("%s", this->last_op_desc);
 
 		//printf("opcode: %s\n", op);
 		//printf("%s\n\n", desc);
 	}
 }
 
-void debug_opcode_reg_word(struct z80* z80, struct z80cpm_memory* z80cpm_memory, char *op, char *desc) {
+void Z80::debug_opcode_reg_word(struct z80cpm_memory* z80cpm_memory, char *op, char *desc) {
 	if (DEBUG_OPCODE == 1) {
-		sprintf(z80->last_op_desc, "opcode: %s_%04x\n%s\n\n", op,
-			WORD(z80cpm_memory->memory[z80->registers.PC], z80cpm_memory->memory[z80->registers.PC + 1]),
+		sprintf(this->last_op_desc, "opcode: %s_%04x\n%s\n\n", op,
+			WORD(z80cpm_memory->memory[this->registers.PC], z80cpm_memory->memory[this->registers.PC + 1]),
 			desc);
-		//printf("%s", z80->last_op_desc);
+		//printf("%s", this->last_op_desc);
 
-		//printf("opcode: %s_%02x\n", op, WORD(z80->memory.z80cpm_memory->memory[z80->registers.PC], z80->memory.z80cpm_memory->memory[z80->registers.PC+1]));
+		//printf("opcode: %s_%02x\n", op, WORD(this->memory.z80cpm_memory->memory[this->registers.PC], this->memory.z80cpm_memory->memory[this->registers.PC+1]));
 		//printf("%s\n\n", desc);
 	}
 }
 
-void debug_opcode_reg_byte(struct z80* z80, struct z80cpm_memory* z80cpm_memory, char *op, char *desc) {
+void Z80::debug_opcode_reg_byte(struct z80cpm_memory* z80cpm_memory, char *op, char *desc) {
 	if (DEBUG_OPCODE == 1) {
-		sprintf(z80->last_op_desc, "opcode: %s_%02x\n%s\n\n", op,
-			z80cpm_memory->memory[z80->registers.PC],
+		sprintf(this->last_op_desc, "opcode: %s_%02x\n%s\n\n", op,
+			z80cpm_memory->memory[this->registers.PC],
 			desc);
-		//printf("%s", z80->last_op_desc);
+		//printf("%s", this->last_op_desc);
 
-		//printf("opcode: %s_&01x\n", op, z80->memory.z80cpm_memory->memory[z80->registers.PC]);
+		//printf("opcode: %s_&01x\n", op, this->memory.z80cpm_memory->memory[this->registers.PC]);
 		//printf("%s\n\n", desc);
 	}
 }
-void debug_opcode_reg_byte_byte(struct z80* z80, struct z80cpm_memory* z80cpm_memory, char *op, char *desc) {
+void Z80::debug_opcode_reg_byte_byte(struct z80cpm_memory* z80cpm_memory, char *op, char *desc) {
 	if (DEBUG_OPCODE == 1) {
-		sprintf(z80->last_op_desc, "opcode: %s_%02x_%02x\n%s\n\n", op,
-			z80cpm_memory->memory[z80->registers.PC],
-			z80cpm_memory->memory[z80->registers.PC + 1],
+		sprintf(this->last_op_desc, "opcode: %s_%02x_%02x\n%s\n\n", op,
+			z80cpm_memory->memory[this->registers.PC],
+			z80cpm_memory->memory[this->registers.PC + 1],
 			desc);
-		//printf("%s", z80->last_op_desc);
+		//printf("%s", this->last_op_desc);
 
-		//printf("opcode: %s_&01x\n", op, z80->memory.z80cpm_memory->memory[z80->registers.PC]);
+		//printf("opcode: %s_&01x\n", op, this->memory.z80cpm_memory->memory[this->registers.PC]);
 		//printf("%s\n\n", desc);
 	}
 }
 
 
 
-void disassembly_current_opcode(struct z80* z80, struct z80cpm_memory* z80cpm_memory, unsigned char current_opcode) {
+void Z80::disassembly_current_opcode(struct z80cpm_memory* z80cpm_memory, unsigned char current_opcode) {
 
 	char temp[5];
 	char line[255];
-	unsigned short memADDR = z80->registers.PC;
+	unsigned short memADDR = this->registers.PC;
 
 	if (current_opcode == 0xCB ||
 		current_opcode == 0xED ||
@@ -873,11 +873,11 @@ void disassembly_current_opcode(struct z80* z80, struct z80cpm_memory* z80cpm_me
 			for (i = param_size - 2; i >= 0; i--) {
 				if (i != param_size - 2)
 					//sprintf(line + strlen(line), " %02x", this->cpu.get_current_memory()[memADDR + i]);
-					sprintf(line + strlen(line), " %02x", RdZ80(z80cpm_memory, memADDR + i));
+					sprintf(line + strlen(line), " %02x", this->RdZ80(z80cpm_memory, memADDR + i));
 						
 				else
 					//sprintf(line + strlen(line), "%02x", this->cpu.get_current_memory()[memADDR + i]);
-					sprintf(line + strlen(line), "%02x", RdZ80(z80cpm_memory, memADDR + i));
+					sprintf(line + strlen(line), "%02x", this->RdZ80(z80cpm_memory, memADDR + i));
 			}
 			sprintf(line + strlen(line), ")");
 		}
@@ -894,108 +894,102 @@ void disassembly_current_opcode(struct z80* z80, struct z80cpm_memory* z80cpm_me
 
 
 
+#include "z80_exec_main_codes.h"
 #include "z80_extended_code_CB.h"
 #include "z80_extended_code_ED.h"
 #include "z80_extended_code_DD.h"
 #include "z80_extended_code_FD.h"
 
 
-void z80_exec(struct z80* z80, struct z80cpm_memory* z80cpm_memory)
+void Z80::z80_exec(struct z80cpm_memory* z80cpm_memory)
 {
 	unsigned char I; //register
 	unsigned short J; //register
 
 	/* Turn tracing on when reached trap address */
-	//if(z80->registers.PC == z80->Trap) z80->Trace=1;
+	//if(this->registers.PC == this->Trap) this->Trace=1;
 	/* Call single-step debugger, exit if requested */
-	//if(z80->Trace) if(!DebugZ80(z80)) return(z80->registers.PC);
+	//if(this->Trace) if(!DebugZ80(z80)) return(this->registers.PC);
 
 
-	//unsigned char opcode = z80_memory_get(&z80->memory, z80->registers.PC);
-	//z80->registers.PC += 1;
+	//unsigned char opcode = z80_memory_get(&this->memory, this->registers.PC);
+	//this->registers.PC += 1;
 
 
-	I = OpZ80(z80, z80cpm_memory, z80->registers.PC);
-	//if (z80->registers.PC - 1 >= 0xC000 && I != 0x76) I = 0;
+	I = this->OpZ80(z80cpm_memory, this->registers.PC);
+	//if (this->registers.PC - 1 >= 0xC000 && I != 0x76) I = 0;
 	if(DEBUG_LOG)
-		disassembly_current_opcode(z80, z80cpm_memory, I);
+		this->disassembly_current_opcode(z80cpm_memory, I);
 
 	unsigned char opcode = I;
-	z80->ICount -= Cycles[I];
+	this->ICount -= Cycles[I];
 
-	z80->registers.R = (z80->registers.R & 0x80) | ((z80->registers.R + 1) & 0x7F);
+	this->registers.R = (this->registers.R & 0x80) | ((this->registers.R + 1) & 0x7F);
 
 
 	switch (opcode)
 	{
-#include "z80_exec_main_codes.h"
+
 
 	case PFX_CB: //Bit instructions (CB)
-		z80->registers.R = (z80->registers.R & 0x80) | ((z80->registers.R + 1) & 0x7F);
+		this->registers.R = (this->registers.R & 0x80) | ((this->registers.R + 1) & 0x7F);
 		/*
-			debug_opcode(z80, "PFX_CB","Bit instructions (CB)");
-			z80->registers.PC--;
-			z80->registers.IFF |= IFF_HALT;
-			z80->IBackup = 0;
-			z80->registers.PC = 0;
+			this->debug_opcode("PFX_CB","Bit instructions (CB)");
+			this->registers.PC--;
+			this->registers.IFF |= IFF_HALT;
+			this->IBackup = 0;
+			this->registers.PC = 0;
 			*/
-		z80_exec_extended_CB(z80, z80cpm_memory);
+		this->z80_exec_extended_CB(z80cpm_memory);
 		break;
 	case PFX_DD: //IX instructions (DD) ..... IX bit instructions (DDCB)
-		z80->registers.R = (z80->registers.R & 0x80) | ((z80->registers.R + 1) & 0x7F);
+		this->registers.R = (this->registers.R & 0x80) | ((this->registers.R + 1) & 0x7F);
 		/*
-			debug_opcode(z80, "PFX_DD","IX instructions (DD) ..... IX bit instructions (DDCB)");
-			z80->registers.PC--;
-			z80->registers.IFF |= IFF_HALT;
-			z80->IBackup = 0;
-			z80->registers.PC = 0;
+			this->debug_opcode("PFX_DD","IX instructions (DD) ..... IX bit instructions (DDCB)");
+			this->registers.PC--;
+			this->registers.IFF |= IFF_HALT;
+			this->IBackup = 0;
+			this->registers.PC = 0;
 			*/
-		z80_exec_extended_DD(z80, z80cpm_memory);
+		this->z80_exec_extended_DD(z80cpm_memory);
 		break;
 	case PFX_ED: //Extended instructions (ED)
-		z80->registers.R = (z80->registers.R & 0x80) | ((z80->registers.R + 1) & 0x7F);
+		this->registers.R = (this->registers.R & 0x80) | ((this->registers.R + 1) & 0x7F);
 		/*
-		debug_opcode(z80, "PFX_ED","Extended instructions (ED)");
-		z80->registers.PC--;
-		z80->registers.IFF |= IFF_HALT;
-		z80->IBackup = 0;
-		z80->registers.PC = 0;
+		this->debug_opcode("PFX_ED","Extended instructions (ED)");
+		this->registers.PC--;
+		this->registers.IFF |= IFF_HALT;
+		this->IBackup = 0;
+		this->registers.PC = 0;
 		*/
-		z80_exec_extended_ED(z80, z80cpm_memory);
+		this->z80_exec_extended_ED(z80cpm_memory);
 		break;
 	case PFX_FD: //IY instructions (FD) ...... IY bit instructions (FDCB)
-		z80->registers.R = (z80->registers.R & 0x80) | ((z80->registers.R + 1) & 0x7F);
+		this->registers.R = (this->registers.R & 0x80) | ((this->registers.R + 1) & 0x7F);
 		/*
-		debug_opcode(z80, "PFX_FD","IY instructions (FD) ...... IY bit instructions (FDCB)");
-		z80->registers.PC--;
-		z80->registers.IFF |= IFF_HALT;
-		z80->IBackup = 0;
-		z80->registers.PC = 0;
+		this->debug_opcode("PFX_FD","IY instructions (FD) ...... IY bit instructions (FDCB)");
+		this->registers.PC--;
+		this->registers.IFF |= IFF_HALT;
+		this->IBackup = 0;
+		this->registers.PC = 0;
 		*/
-		z80_exec_extended_FD(z80, z80cpm_memory);
+		this->z80_exec_extended_FD(z80cpm_memory);
 		break;
 
 	default: {
-		char str2[20];
-		sprintf(str2, "unknown 0x%x", opcode);
-		debug_opcode(z80, str2, (char*)"");
-		if (z80->TrapBadOps)
-			printf
-			(
-				"[Z80 %lX] Unrecognized instruction: %02X at PC=%04X\n",
-				(long)z80->User, OpZ80(z80, z80cpm_memory, z80->registers.PC - 1), z80->registers.PC - 1
-			);
+		this->z80_exec_main_code( opcode, z80cpm_memory);
+
 	}
 
 			 /*
 			 // CLS: Clear The Display
 			 case 0x00E0:
-				 z80_screen_clear(&z80->screen);
+				 z80_screen_clear(&this->screen);
 			 break;
 
 			 // RET: Return from subroutine
 			 case 0x00EE:
-				 z80->registers.PC = z80_stack_pop(z80);
+				 this->registers.PC = z80_stack_pop(z80);
 			 break;
 
 			 default:
@@ -1007,36 +1001,36 @@ void z80_exec(struct z80* z80, struct z80cpm_memory* z80cpm_memory)
 	}
 
 	/* If cycle counter expired... */
-	if (z80->ICount <= 0)
+	if (this->ICount <= 0)
 	{
 		/* If we have come after EI, get address from IRequest */
 		/* Otherwise, get it from the loop handler             */
-		if (z80->registers.IFF & IFF_EI)
+		if (this->registers.IFF & IFF_EI)
 		{
-			z80->registers.IFF = (z80->registers.IFF & ~IFF_EI) | IFF_1; /* Done with AfterEI state */
-			z80->ICount += z80->IBackup - 1;       /* Restore the ICount      */
+			this->registers.IFF = (this->registers.IFF & ~IFF_EI) | IFF_1; /* Done with AfterEI state */
+			this->ICount += this->IBackup - 1;       /* Restore the ICount      */
 
 			/* Call periodic handler or set pending IRQ */
-			if (z80->ICount > 0) J = z80->IRequest;
+			if (this->ICount > 0) J = this->IRequest;
 			else
 			{
-				J = LoopZ80(z80);        /* Call periodic handler    */
-				z80->ICount += z80->IPeriod; /* Reset the cycle counter  */
-				if (J == INT_NONE) J = z80->IRequest;  /* Pending IRQ */
+				J = this->LoopZ80();        /* Call periodic handler    */
+				this->ICount += this->IPeriod; /* Reset the cycle counter  */
+				if (J == INT_NONE) J = this->IRequest;  /* Pending IRQ */
 			}
 		}
 		else
 		{
-			J = LoopZ80(z80);          /* Call periodic handler    */
-			z80->ICount += z80->IPeriod;   /* Reset the cycle counter  */
-			if (J == INT_NONE) J = z80->IRequest;    /* Pending IRQ */
+			J = this->LoopZ80();          /* Call periodic handler    */
+			this->ICount += this->IPeriod;   /* Reset the cycle counter  */
+			if (J == INT_NONE) J = this->IRequest;    /* Pending IRQ */
 		}
 
-		if (J == INT_QUIT) return;// (z80->registers.PC); /* Exit if INT_QUIT */
-		if (J != INT_NONE) IntZ80(z80, z80cpm_memory, J);   /* Int-pt if needed */
+		if (J == INT_QUIT) return;// (this->registers.PC); /* Exit if INT_QUIT */
+		if (J != INT_NONE) this->IntZ80(z80cpm_memory, J);   /* Int-pt if needed */
 	}
-	else if (z80->ICount > 10000)
-		z80->ICount = 0;
+	else if (this->ICount > 10000)
+		this->ICount = 0;
 
 
 }

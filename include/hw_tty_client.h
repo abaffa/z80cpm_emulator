@@ -18,7 +18,6 @@
 #ifndef HWTTYCLIENT_H
 #define HWTTYCLIENT_H
 #include "config.h"
-#include "z80.h"
 #include <queue>
 
 #if defined(__linux__) || defined(__MINGW32__)

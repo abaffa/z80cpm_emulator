@@ -32,6 +32,10 @@ void hw_ide_init(struct hw_ide* hw_ide) {
 		hw_ide->memory[address] = 0x00;
 	}
 
+	for (address = 0; address < 8; address++) {
+		hw_ide->data[address] = 0x00;
+	}
+
 	hw_ide_reset(hw_ide);
 }
 

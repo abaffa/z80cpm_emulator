@@ -40,13 +40,6 @@ unsigned short mem_offset = 0x4000;
 int mem_follow = 0;
 
 
-struct z80cpm_computer
-{
-	struct z80 *z80;
-	struct z80cpm_memory *z80cpm_memory;
-};
-
-
 void cls(HANDLE hConsole)
 {
 	COORD coordScreen = { 0, 0 };    // home for the cursor
@@ -104,49 +97,49 @@ void cls(HANDLE hConsole)
   (byte & 0x01 ? '1' : '0') 
 
 
-void cpu_exec(struct z80 *z80, struct z80cpm_memory* z80cpm_memory) {
-	z80_exec(z80, z80cpm_memory);
+void cpu_exec(Z80& z80, struct z80cpm_memory* z80cpm_memory) {
+	z80.z80_exec(z80cpm_memory);
 }
 
 #define LSB(w) ((w) & 0xff)
 #define MSB(w) (((w) >> 8) & 0xff)
 #define WORD(l, h) (((h)<<8) | (l))
-void cpu_print(struct z80 *z80, struct z80cpm_memory* z80cpm_memory) {
+void cpu_print(Z80& z80, struct z80cpm_memory* z80cpm_memory) {
 
-	printf("\t ""%c%c%c%c%c%c%c%c""\n", BYTE_TO_BINARY(MSB(z80->registers.AF)));
+	printf("\t ""%c%c%c%c%c%c%c%c""\n", BYTE_TO_BINARY(MSB(z80.registers.AF)));
 
 	printf("  AF  |  BC  |  DE  |  HL  || S | Z | H | P | V | N | C |\n");
-	printf(" %04x |", z80->registers.AF);
-	printf(" %04x |", z80->registers.BC);
-	printf(" %04x |", z80->registers.DE);
-	printf(" %04x ||", z80->registers.HL);
-	printf(" %01x |", (z80->registers.AF & S_FLAG) >> 7);
-	printf(" %01x |", (z80->registers.AF & Z_FLAG) >> 6);
-	printf(" %01x |", (z80->registers.AF & H_FLAG) >> 4);
-	printf(" %01x |", (z80->registers.AF & P_FLAG) >> 2);
-	printf(" %01x |", (z80->registers.AF & V_FLAG) >> 2);
-	printf(" %01x |", (z80->registers.AF & N_FLAG) >> 1);
-	printf(" %01x |", (z80->registers.AF & C_FLAG));
-	printf("FLAGS ""%c%c%c%c%c%c%c%c", BYTE_TO_BINARY(LSB(z80->registers.AF)));
+	printf(" %04x |", z80.registers.AF);
+	printf(" %04x |", z80.registers.BC);
+	printf(" %04x |", z80.registers.DE);
+	printf(" %04x ||", z80.registers.HL);
+	printf(" %01x |", (z80.registers.AF & S_FLAG) >> 7);
+	printf(" %01x |", (z80.registers.AF & Z_FLAG) >> 6);
+	printf(" %01x |", (z80.registers.AF & H_FLAG) >> 4);
+	printf(" %01x |", (z80.registers.AF & P_FLAG) >> 2);
+	printf(" %01x |", (z80.registers.AF & V_FLAG) >> 2);
+	printf(" %01x |", (z80.registers.AF & N_FLAG) >> 1);
+	printf(" %01x |", (z80.registers.AF & C_FLAG));
+	printf("FLAGS ""%c%c%c%c%c%c%c%c", BYTE_TO_BINARY(LSB(z80.registers.AF)));
 	printf("\n\n");
 
 	printf("  AF' |  BC' |  DE' |  HL' ||  PC  |  SP  ||  IX  |  IY  || I  | R  |\n");
-	printf(" %04x |", z80->registers.AFl);
-	printf(" %04x |", z80->registers.BCl);
-	printf(" %04x |", z80->registers.DEl);
-	printf(" %04x ||", z80->registers.HLl);
-	printf(" %04x |", z80->registers.PC);
-	printf(" %04x ||", z80->registers.SP);
-	printf(" %04x |", z80->registers.IX);
-	printf(" %04x ||", z80->registers.IY);
-	printf(" %02x |", z80->registers.I);
-	printf(" %02x |", z80->registers.R);
+	printf(" %04x |", z80.registers.AFl);
+	printf(" %04x |", z80.registers.BCl);
+	printf(" %04x |", z80.registers.DEl);
+	printf(" %04x ||", z80.registers.HLl);
+	printf(" %04x |", z80.registers.PC);
+	printf(" %04x ||", z80.registers.SP);
+	printf(" %04x |", z80.registers.IX);
+	printf(" %04x ||", z80.registers.IY);
+	printf(" %02x |", z80.registers.I);
+	printf(" %02x |", z80.registers.R);
 	printf("\n\n");
-	printf("IFF ""%c%c%c%c%c%c%c%c", BYTE_TO_BINARY(z80->registers.IFF));
+	printf("IFF ""%c%c%c%c%c%c%c%c", BYTE_TO_BINARY(z80.registers.IFF));
 	printf("\n\n");
 
 	if (mem_follow)
-		mem_offset = (z80->registers.PC / 0x10) * 0x10;
+		mem_offset = (z80.registers.PC / 0x10) * 0x10;
 
 	int i = 0;
 	printf("offset: %04x\n", mem_offset);
@@ -157,14 +150,14 @@ void cpu_print(struct z80 *z80, struct z80cpm_memory* z80cpm_memory) {
 
 	for (i = 0 + mem_offset; i < 256 + mem_offset; i++) {
 		if (i % 16 == 0)
-			if (z80->registers.PC == i)
+			if (z80.registers.PC == i)
 				printf(" #");
 			else
 				printf("  ");
-		if (z80->registers.PC == i || z80->registers.PC - 1 == i)
-			printf("%02x#", RdZ80(z80cpm_memory, i));
+		if (z80.registers.PC == i || z80.registers.PC - 1 == i)
+			printf("%02x#", z80.RdZ80(z80cpm_memory, i));
 		else
-			printf("%02x ", RdZ80(z80cpm_memory, i));
+			printf("%02x ", z80.RdZ80(z80cpm_memory, i));
 
 		if ((i + 1) % 16 == 0 && i < 255 + mem_offset)
 			printf("\n %04x ", i + 1);
@@ -173,8 +166,8 @@ void cpu_print(struct z80 *z80, struct z80cpm_memory* z80cpm_memory) {
 	printf("Stack:");
 	for (i = 0; i < 16; i += 2) {
 		if (i % 2 == 0) printf("  ");
-		printf("%02x", RdZ80(z80cpm_memory, z80->registers.SP + i + 1));
-		printf("%02x", RdZ80(z80cpm_memory, z80->registers.SP + i));
+		printf("%02x", z80.RdZ80(z80cpm_memory, z80.registers.SP + i + 1));
+		printf("%02x", z80.RdZ80(z80cpm_memory, z80.registers.SP + i));
 	}
 
 	printf("\n\n");
@@ -194,9 +187,9 @@ DWORD WINAPI run_thread(LPVOID vargp)
 #endif
 {
 
-	struct z80 *z80 = ((struct z80cpm_computer*)vargp)->z80;
-	struct z80cpm_memory *z80cpm_memory = ((struct z80cpm_computer*)vargp)->z80cpm_memory;
-	queue<unsigned char> *keyboard_queue = &z80->keyboard_queue;
+	Z80& z80 = *reinterpret_cast<Z80*>(vargp);
+	struct z80cpm_memory *z80cpm_memory = z80.z80cpm_memory;
+	queue<unsigned char> *keyboard_queue = &z80.keyboard_queue;
 
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 	cls(hConsole);
@@ -259,25 +252,25 @@ DWORD WINAPI run_thread(LPVOID vargp)
 		cpu_clk += deltaTime;
 
 
-		if ((z80->registers.IFF & IFF_HALT) == 0x0 &&
+		if ((z80.registers.IFF & IFF_HALT) == 0x0 &&
 			((!do_steps && cpu >= speed) || (do_steps && step))) {
 			cpu_exec(z80, z80cpm_memory); iii++;
 			cpu = 0;
 
 			step = 0;
 			//if(RdZ80(z80,0x4042) == 0x1c)
-			//if(do_breakpoint && z80->registers.HL ==0x4042)
+			//if(do_breakpoint && z80.registers.HL ==0x4042)
 			//  do_steps = 1;
 
 
-			if (do_breakpoint && z80->registers.PC == breakpoint)
+			if (do_breakpoint && z80.registers.PC == breakpoint)
 				do_steps = 1;
 
-			//if(do_breakpoint && RdZ80(z80, z80->registers.PC) == bp_opcode
-			//&& RdZ80(z80, z80->registers.PC+1) == bp_opcode2)
+			//if(do_breakpoint && z80->RdZ80(RdZ80(z80, z80.registers.PC) == bp_opcode
+			//&& z80->RdZ80(RdZ80(z80, z80.registers.PC+1) == bp_opcode2)
 			//  do_steps = 1;
 		}
-		else if (z80->registers.IFF & IFF_HALT) {
+		else if (z80.registers.IFF & IFF_HALT) {
 			cpu = 0;
 			iii++;
 		}
@@ -285,16 +278,16 @@ DWORD WINAPI run_thread(LPVOID vargp)
 
 		if (keyboard >= 0.001) {
 			
-			if (do_steps == 0 && z80->PORT_0002h  == 0xFF && (z80->registers.IFF & IFF_EI) == 0x0 && (z80->registers.IFF & IFF_1) == 0x1 && !keyboard_queue->empty()) {
+			if (do_steps == 0 && z80.PORT_0002h  == 0xFF && (z80.registers.IFF & IFF_EI) == 0x0 && (z80.registers.IFF & IFF_1) == 0x1 && !keyboard_queue->empty()) {
 				int key = keyboard_queue->front();
 				keyboard_queue->pop();
 				//if (key != (int)'7' && key != (int)'8' && key != (int)'9') {
 
 
-				z80->PORT_0002h = key;
-				z80->IRequest = z80->keyboard_int;
-				//z80->registers.IFF &= ~IFF_1;
-				//z80->registers.IFF |= IFF_2;
+				z80.PORT_0002h = key;
+				z80.IRequest = z80.keyboard_int;
+				//z80.registers.IFF &= ~IFF_1;
+				//z80.registers.IFF |= IFF_2;
 				//IntZ80(z80, z80cpm_memory->memory, 0x60);
 			} 
 			keyboard = 0;
@@ -374,7 +367,7 @@ DWORD WINAPI run_thread(LPVOID vargp)
 			printf("                                                                                                                                                      \n");
 			SetConsoleCursorPosition(hConsole, pos);
 			printf("%.3fMHz - %g\n", ((float)iii) / 1000000, speed);
-			printf("%s", z80->last_op_desc);
+			printf("%s", z80.last_op_desc);
 			cpu_print(z80, z80cpm_memory);
 		}
 		frame = 0;
@@ -382,7 +375,7 @@ DWORD WINAPI run_thread(LPVOID vargp)
 
 	}
 
-	if (z80->registers.IFF & IFF_HALT) {
+	if (z80.registers.IFF & IFF_HALT) {
 		//printf("%s", z80.last_op_desc);
 		//printf("HALT");
 		//return;
@@ -390,9 +383,9 @@ DWORD WINAPI run_thread(LPVOID vargp)
 
 		//do_steps = 0;
 		//do_steps = 1;
-		IntZ80(z80, z80cpm_memory, INT_IRQ); iii++;
-		z80->registers.IFF |= IFF_1;
-		IntZ80(z80, z80cpm_memory, INT_IRQ);
+		z80.IntZ80(z80cpm_memory, INT_IRQ); iii++;
+		z80.registers.IFF |= IFF_1;
+		z80.IntZ80(z80cpm_memory, INT_IRQ);
 	}
 
 
@@ -405,9 +398,9 @@ DWORD WINAPI run_thread(LPVOID vargp)
 
 
 	if (ide >= 10) {
-		if (z80->hw_ide.save == 1) {
-			hw_ide_save_disk(z80->hw_ide.memory);
-			z80->hw_ide.save = 0;
+		if (z80.hw_ide.save == 1) {
+			hw_ide_save_disk(z80.hw_ide.memory);
+			z80.hw_ide.save = 0;
 		}
 
 		ide = 0;
@@ -458,13 +451,13 @@ int main(int argc, char** argv)
 
 	struct z80cpm_keyboard z80cpm_keyboard;
 	struct z80cpm_memory z80cpm_memory;
-	struct z80 z80;
-	z80_init(&z80);
+	Z80 z80;
+	z80.z80_init();
 
 	///////////////////////////////////////////////////////////////////////////
 	z80cpm_memory.memory = (unsigned char*)malloc(Z80CPM_MEMORY_SIZE * sizeof(unsigned char));
 	z80cpm_memory.rom = (unsigned char*)malloc(Z80CPM_MEMORY_SIZE * sizeof(unsigned char));
-	//memcpy(z80->memory.memory, z80_default_character_set, sizeof(z80_default_character_set));
+	//memcpy(z80->RdZ80(memory.memory, z80_default_character_set, sizeof(z80_default_character_set));
 
 	int j = 0;
 	for (j = 0; j < Z80CPM_MEMORY_SIZE; j++) {
@@ -474,19 +467,18 @@ int main(int argc, char** argv)
 	z80cpm_memory.rom_disabled = 0;
 
 	//assert(size + Z80_PROGRAM_LOAD_ADDRESS < Z80_MEMORY_SIZE);
-	//memcpy(&z80->memory.z80cpm_memory->memory[Z80_PROGRAM_LOAD_ADDRESS], buf, size);
+	//memcpy(&z80->RdZ80(memory.z80cpm_memory->memory[Z80_PROGRAM_LOAD_ADDRESS], buf, size);
 
-	//memcpy(z80->memory.memory, buf, size);
+	//memcpy(z80->RdZ80(memory.memory, buf, size);
 	memcpy(&z80cpm_memory.rom[0], buf, size);
 	///////////////////////////////////////////////////////////////////////////
 
-	z80_reset(&z80);
+	z80.z80_reset();
 
 	z80cpm_keyboard_set_map(&z80cpm_keyboard, keyboard_map);
 
-	struct z80cpm_computer z80cpm_computer;
-	z80cpm_computer.z80 = &z80;
-	z80cpm_computer.z80cpm_memory = &z80cpm_memory;
+	
+	z80.z80cpm_memory = &z80cpm_memory;
 
 
 #ifdef __MINGW32__
@@ -494,7 +486,7 @@ int main(int argc, char** argv)
 	pthread_create(&tid, NULL, run_thread, (void *)&z80cpm_computer);
 #elif _MSC_VER        
 	DWORD tid;
-	HANDLE myHandle = CreateThread(0, 0, run_thread, &z80cpm_computer, 0, &tid);
+	HANDLE myHandle = CreateThread(0, 0, run_thread, &z80, 0, &tid);
 #endif
 
 
