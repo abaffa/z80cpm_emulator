@@ -1,0 +1,6 @@
+#define WORD(l, h) (((h)<<8) | (l))
+#define LSB(w) ((w) & 0xff)
+#define MSB(w) (((w) >> 8) & 0xff)
+#define SET_LSB(Rg, l) Rg = ((Rg & 0xFF00) | ((l) & 0xff))
+#define SET_MSB(Rg, h) Rg = ((h)<<8) | (Rg & 0x00FF)
+#define SET_WORD(Rg, l, h) Rg = WORD(l, h)
