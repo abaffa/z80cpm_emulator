@@ -460,7 +460,7 @@ void Z80::z80_init()
 
 	fclose(fp);
 
-	
+
 
 	fa = fopen("debug_trace.log", "w");
 	if (fa == NULL) {
@@ -470,7 +470,7 @@ void Z80::z80_init()
 
 
 	//if (this->cpu.config.SERVER) {
-		this->hw_tty.start_server(&this->keyboard_queue);
+	this->hw_tty.start_server(&this->keyboard_queue);
 	//}
 
 }
@@ -499,11 +499,14 @@ void Z80::z80_reset()
 	this->registers.PC = 0x0000;
 
 	this->registers.IFF = 0x00;
+	
+	this->IPeriod = 0;
+
 	this->ICount = this->IPeriod;
 	this->IRequest = INT_NONE;
 	this->IBackup = 0;
 
-	this->JumpZ80( this->registers.PC);
+	this->JumpZ80(this->registers.PC);
 
 
 
@@ -651,7 +654,7 @@ void Z80::OutZ80(struct z80cpm_memory* z80cpm_memory, unsigned short Port, unsig
 			//printf("%x\n", Value);
 			if (current_konamicode >= 6) {
 				this->keyboard_int = Value;
-				current_konamicode = 0;				
+				current_konamicode = 0;
 			}
 
 			if (current_konamicode[konamicode] == Value)
@@ -669,9 +672,10 @@ unsigned char Z80::InZ80(unsigned short Port) {
 		if ((Port & 0x03) == 0x00)
 		{
 			this->IRequest = INT_NONE;
-			//this->PORT_0002h = 0x00;
+			
 			value = this->PORT_0002h;
 			this->PORT_0002h = 0xFF;
+//			printf("%c", value);
 		}
 	}
 	else if ((Port & 0b11111000) == 0b00010000) { //10-17
@@ -747,7 +751,7 @@ void Z80::IntZ80(struct z80cpm_memory* z80cpm_memory, unsigned short Vector)
 			this->registers.IFF &= ~(IFF_1 | IFF_EI);
 			/* Jump to hardwired NMI vector */
 			this->registers.PC = 0x0066;
-			this->JumpZ80( 0x0066);
+			this->JumpZ80(0x0066);
 			/* Done */
 			return;
 		}
@@ -764,27 +768,27 @@ void Z80::IntZ80(struct z80cpm_memory* z80cpm_memory, unsigned short Vector)
 
 			SET_LSB(this->registers.PC, RdZ80(z80cpm_memory, Vector++));
 			SET_MSB(this->registers.PC, RdZ80(z80cpm_memory, Vector));
-			this->JumpZ80( this->registers.PC);
+			this->JumpZ80(this->registers.PC);
 			/* Done */
 			return;
 		}
 
 		/* If in IM1 mode, just jump to hardwired IRQ vector */
-		if (this->registers.IFF & IFF_IM1) { this->registers.PC = 0x0038; this->JumpZ80( 0x0038); return; }
+		if (this->registers.IFF & IFF_IM1) { this->registers.PC = 0x0038; this->JumpZ80(0x0038); return; }
 
 		/* If in IM0 mode... */
 
 		/* Jump to a vector */
 		switch (Vector)
 		{
-		case INT_RST00: this->registers.PC = 0x0000; this->JumpZ80( 0x0000); break;
-		case INT_RST08: this->registers.PC = 0x0008; this->JumpZ80( 0x0008); break;
-		case INT_RST10: this->registers.PC = 0x0010; this->JumpZ80( 0x0010); break;
-		case INT_RST18: this->registers.PC = 0x0018; this->JumpZ80( 0x0018); break;
-		case INT_RST20: this->registers.PC = 0x0020; this->JumpZ80( 0x0020); break;
-		case INT_RST28: this->registers.PC = 0x0028; this->JumpZ80( 0x0028); break;
-		case INT_RST30: this->registers.PC = 0x0030; this->JumpZ80( 0x0030); break;
-		case INT_RST38: this->registers.PC = 0x0038; this->JumpZ80( 0x0038); break;
+		case INT_RST00: this->registers.PC = 0x0000; this->JumpZ80(0x0000); break;
+		case INT_RST08: this->registers.PC = 0x0008; this->JumpZ80(0x0008); break;
+		case INT_RST10: this->registers.PC = 0x0010; this->JumpZ80(0x0010); break;
+		case INT_RST18: this->registers.PC = 0x0018; this->JumpZ80(0x0018); break;
+		case INT_RST20: this->registers.PC = 0x0020; this->JumpZ80(0x0020); break;
+		case INT_RST28: this->registers.PC = 0x0028; this->JumpZ80(0x0028); break;
+		case INT_RST30: this->registers.PC = 0x0030; this->JumpZ80(0x0030); break;
+		case INT_RST38: this->registers.PC = 0x0038; this->JumpZ80(0x0038); break;
 		}
 	}
 }
@@ -848,7 +852,7 @@ void Z80::disassembly_current_opcode(struct z80cpm_memory* z80cpm_memory, unsign
 		current_opcode == 0xED ||
 		current_opcode == 0xDD ||
 		current_opcode == 0xFD) {
-		
+
 		memADDR++;
 		current_opcode = (((unsigned short)current_opcode) << 8) | RdZ80(z80cpm_memory, memADDR);
 		sprintf(temp, "%04x", current_opcode);
@@ -874,7 +878,7 @@ void Z80::disassembly_current_opcode(struct z80cpm_memory* z80cpm_memory, unsign
 				if (i != param_size - 2)
 					//sprintf(line + strlen(line), " %02x", this->cpu.get_current_memory()[memADDR + i]);
 					sprintf(line + strlen(line), " %02x", this->RdZ80(z80cpm_memory, memADDR + i));
-						
+
 				else
 					//sprintf(line + strlen(line), "%02x", this->cpu.get_current_memory()[memADDR + i]);
 					sprintf(line + strlen(line), "%02x", this->RdZ80(z80cpm_memory, memADDR + i));
@@ -918,7 +922,7 @@ void Z80::z80_exec(struct z80cpm_memory* z80cpm_memory)
 
 	I = this->OpZ80(z80cpm_memory, this->registers.PC);
 	//if (this->registers.PC - 1 >= 0xC000 && I != 0x76) I = 0;
-	if(DEBUG_LOG)
+	if (DEBUG_LOG)
 		this->disassembly_current_opcode(z80cpm_memory, I);
 
 	unsigned char opcode = I;
@@ -929,75 +933,55 @@ void Z80::z80_exec(struct z80cpm_memory* z80cpm_memory)
 
 	switch (opcode)
 	{
-
-
-	case PFX_CB: //Bit instructions (CB)
-		this->registers.R = (this->registers.R & 0x80) | ((this->registers.R + 1) & 0x7F);
-		/*
-			this->debug_opcode("PFX_CB","Bit instructions (CB)");
+		case PFX_CB: //Bit instructions (CB)
+			this->registers.R = (this->registers.R & 0x80) | ((this->registers.R + 1) & 0x7F);
+			/*
+				this->debug_opcode("PFX_CB","Bit instructions (CB)");
+				this->registers.PC--;
+				this->registers.IFF |= IFF_HALT;
+				this->IBackup = 0;
+				this->registers.PC = 0;
+				*/
+			this->z80_exec_extended_CB(z80cpm_memory);
+			break;
+		case PFX_DD: //IX instructions (DD) ..... IX bit instructions (DDCB)
+			this->registers.R = (this->registers.R & 0x80) | ((this->registers.R + 1) & 0x7F);
+			/*
+				this->debug_opcode("PFX_DD","IX instructions (DD) ..... IX bit instructions (DDCB)");
+				this->registers.PC--;
+				this->registers.IFF |= IFF_HALT;
+				this->IBackup = 0;
+				this->registers.PC = 0;
+				*/
+			this->z80_exec_extended_DD(z80cpm_memory);
+			break;
+		case PFX_ED: //Extended instructions (ED)
+			this->registers.R = (this->registers.R & 0x80) | ((this->registers.R + 1) & 0x7F);
+			/*
+			this->debug_opcode("PFX_ED","Extended instructions (ED)");
 			this->registers.PC--;
 			this->registers.IFF |= IFF_HALT;
 			this->IBackup = 0;
 			this->registers.PC = 0;
 			*/
-		this->z80_exec_extended_CB(z80cpm_memory);
-		break;
-	case PFX_DD: //IX instructions (DD) ..... IX bit instructions (DDCB)
-		this->registers.R = (this->registers.R & 0x80) | ((this->registers.R + 1) & 0x7F);
-		/*
-			this->debug_opcode("PFX_DD","IX instructions (DD) ..... IX bit instructions (DDCB)");
+			this->z80_exec_extended_ED(z80cpm_memory);
+			break;
+		case PFX_FD: //IY instructions (FD) ...... IY bit instructions (FDCB)
+			this->registers.R = (this->registers.R & 0x80) | ((this->registers.R + 1) & 0x7F);
+			/*
+			this->debug_opcode("PFX_FD","IY instructions (FD) ...... IY bit instructions (FDCB)");
 			this->registers.PC--;
 			this->registers.IFF |= IFF_HALT;
 			this->IBackup = 0;
 			this->registers.PC = 0;
 			*/
-		this->z80_exec_extended_DD(z80cpm_memory);
-		break;
-	case PFX_ED: //Extended instructions (ED)
-		this->registers.R = (this->registers.R & 0x80) | ((this->registers.R + 1) & 0x7F);
-		/*
-		this->debug_opcode("PFX_ED","Extended instructions (ED)");
-		this->registers.PC--;
-		this->registers.IFF |= IFF_HALT;
-		this->IBackup = 0;
-		this->registers.PC = 0;
-		*/
-		this->z80_exec_extended_ED(z80cpm_memory);
-		break;
-	case PFX_FD: //IY instructions (FD) ...... IY bit instructions (FDCB)
-		this->registers.R = (this->registers.R & 0x80) | ((this->registers.R + 1) & 0x7F);
-		/*
-		this->debug_opcode("PFX_FD","IY instructions (FD) ...... IY bit instructions (FDCB)");
-		this->registers.PC--;
-		this->registers.IFF |= IFF_HALT;
-		this->IBackup = 0;
-		this->registers.PC = 0;
-		*/
-		this->z80_exec_extended_FD(z80cpm_memory);
-		break;
+			this->z80_exec_extended_FD(z80cpm_memory);
+			break;
 
-	default: {
-		this->z80_exec_main_code( opcode, z80cpm_memory);
+		default: {
+			this->z80_exec_main_code(opcode, z80cpm_memory);
 
-	}
-
-			 /*
-			 // CLS: Clear The Display
-			 case 0x00E0:
-				 z80_screen_clear(&this->screen);
-			 break;
-
-			 // RET: Return from subroutine
-			 case 0x00EE:
-				 this->registers.PC = z80_stack_pop(z80);
-			 break;
-
-			 default:
-				 z80_exec_extended(z80, opcode);
-
-				 */
-
-
+		}
 	}
 
 	/* If cycle counter expired... */
@@ -1029,8 +1013,4 @@ void Z80::z80_exec(struct z80cpm_memory* z80cpm_memory)
 		if (J == INT_QUIT) return;// (this->registers.PC); /* Exit if INT_QUIT */
 		if (J != INT_NONE) this->IntZ80(z80cpm_memory, J);   /* Int-pt if needed */
 	}
-	else if (this->ICount > 10000)
-		this->ICount = 0;
-
-
 }

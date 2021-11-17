@@ -14,6 +14,12 @@
 #include <pthread.h> 
 #endif
 
+#if defined(__linux__) || defined(__MINGW32__)
+#include <fcntl.h>
+#else
+#include <mutex> 
+#endif
+
 
 using namespace std::chrono;
 
@@ -38,6 +44,14 @@ int show_debug = 0;
 char state = 0;
 unsigned short mem_offset = 0x4000;
 int mem_follow = 0;
+
+#ifdef _MSC_VER    
+mutex mtx_out;
+condition_variable cv_out;
+
+#else
+pthread_mutex_t mtx_out;
+#endif
 
 
 void cls(HANDLE hConsole)
@@ -213,6 +227,8 @@ DWORD WINAPI run_thread(LPVOID vargp)
 
 	do_steps = 0;
 	int step = 0;
+	
+	int wait = 0;
 
 	int do_breakpoint = 0;
 	unsigned char bp_opcode = 0xed;
@@ -251,9 +267,54 @@ DWORD WINAPI run_thread(LPVOID vargp)
 		cpu += deltaTime;
 		cpu_clk += deltaTime;
 
+		
 
 		if ((z80.registers.IFF & IFF_HALT) == 0x0 &&
 			((!do_steps && cpu >= speed) || (do_steps && step))) {
+
+
+
+	//		if (keyboard >= 0.0005) {
+
+				if (wait == 0 && do_steps == 0 && z80.IRequest == INT_NONE && z80.PORT_0002h == 0xFF && !(z80.registers.IFF & IFF_EI) && (z80.registers.IFF & IFF_1) && (z80.registers.IFF & IFF_2) && !keyboard_queue->empty()) {
+
+
+#ifdef _MSC_VER    
+					std::unique_lock<std::mutex> lock(mtx_out);
+#else
+					pthread_mutex_lock(&mtx_out);
+#endif
+
+					int key = keyboard_queue->front();
+					keyboard_queue->pop();
+
+#ifdef _MSC_VER    
+					cv_out.notify_all();
+#else
+					pthread_mutex_unlock(&mtx_out);
+#endif
+
+
+					//if (key != (int)'7' && key != (int)'8' && key != (int)'9') {
+
+
+					z80.registers.IFF &= ~IFF_2;
+					z80.PORT_0002h = key;
+					z80.IRequest = z80.keyboard_int;
+					//z80.registers.IFF &= ~IFF_1;
+					//z80.registers.IFF |= IFF_EI;
+					//IntZ80(z80, z80cpm_memory->memory, 0x60);
+					wait = 1;
+				}
+				else if (wait < 700 && wait > 0 && do_steps == 0 && z80.IRequest == INT_NONE && z80.PORT_0002h == 0xFF && !(z80.registers.IFF & IFF_EI) && (z80.registers.IFF & IFF_1) && (z80.registers.IFF & IFF_2) && !keyboard_queue->empty())
+					wait++;
+				else if (do_steps == 0 && z80.IRequest == INT_NONE && z80.PORT_0002h == 0xFF && !(z80.registers.IFF & IFF_EI) && (z80.registers.IFF & IFF_1) && (z80.registers.IFF & IFF_2) && !keyboard_queue->empty())
+					wait = 0;
+
+				keyboard = 0;
+//			}
+
+
 			cpu_exec(z80, z80cpm_memory); iii++;
 			cpu = 0;
 
@@ -269,30 +330,13 @@ DWORD WINAPI run_thread(LPVOID vargp)
 			//if(do_breakpoint && z80->RdZ80(RdZ80(z80, z80.registers.PC) == bp_opcode
 			//&& z80->RdZ80(RdZ80(z80, z80.registers.PC+1) == bp_opcode2)
 			//  do_steps = 1;
+
 		}
 		else if (z80.registers.IFF & IFF_HALT) {
 			cpu = 0;
 			iii++;
 		}
-
-
-		if (keyboard >= 0.001) {
-			
-			if (do_steps == 0 && z80.PORT_0002h  == 0xFF && (z80.registers.IFF & IFF_EI) == 0x0 && (z80.registers.IFF & IFF_1) == 0x1 && !keyboard_queue->empty()) {
-				int key = keyboard_queue->front();
-				keyboard_queue->pop();
-				//if (key != (int)'7' && key != (int)'8' && key != (int)'9') {
-
-
-				z80.PORT_0002h = key;
-				z80.IRequest = z80.keyboard_int;
-				//z80.registers.IFF &= ~IFF_1;
-				//z80.registers.IFF |= IFF_2;
-				//IntZ80(z80, z80cpm_memory->memory, 0x60);
-			} 
-			keyboard = 0;
-		}
-
+			   		 
 
 		if (frame >= 0.1) {
 			/*
@@ -355,59 +399,59 @@ DWORD WINAPI run_thread(LPVOID vargp)
 		if (key == (int)'0')
 			return NULL;
 			*/
-		
-
-		//cls(hConsole);
-
-		if (show_debug) {
-			COORD pos = { 0, 0 };
-			SetConsoleCursorPosition(hConsole, pos);
-			printf("                                                                                                                                                      \r\n");
-			printf("                                                                                                                                                      \n");
-			printf("                                                                                                                                                      \n");
-			SetConsoleCursorPosition(hConsole, pos);
-			printf("%.3fMHz - %g\n", ((float)iii) / 1000000, speed);
-			printf("%s", z80.last_op_desc);
-			cpu_print(z80, z80cpm_memory);
-		}
-		frame = 0;
 
 
-	}
+			//cls(hConsole);
 
-	if (z80.registers.IFF & IFF_HALT) {
-		//printf("%s", z80.last_op_desc);
-		//printf("HALT");
-		//return;
-
-
-		//do_steps = 0;
-		//do_steps = 1;
-		z80.IntZ80(z80cpm_memory, INT_IRQ); iii++;
-		z80.registers.IFF |= IFF_1;
-		z80.IntZ80(z80cpm_memory, INT_IRQ);
-	}
-
-
-	if (cpu_clk >= 1) {
-		iii = 0;
-		cpu_clk = 0;
-	}
+			if (show_debug) {
+				COORD pos = { 0, 0 };
+				SetConsoleCursorPosition(hConsole, pos);
+				printf("                                                                                                                                                      \r\n");
+				printf("                                                                                                                                                      \n");
+				printf("                                                                                                                                                      \n");
+				SetConsoleCursorPosition(hConsole, pos);
+				printf("%.3fMHz - %g\n", ((float)iii) / 1000000, speed);
+				printf("%s", z80.last_op_desc);
+				cpu_print(z80, z80cpm_memory);
+			}
+			frame = 0;
 
 
-
-
-	if (ide >= 10) {
-		if (z80.hw_ide.save == 1) {
-			hw_ide_save_disk(z80.hw_ide.memory);
-			z80.hw_ide.save = 0;
 		}
 
-		ide = 0;
-	}
-}
+		if (z80.registers.IFF & IFF_HALT) {
+			//printf("%s", z80.last_op_desc);
+			//printf("HALT");
+			//return;
 
-return NULL;
+
+			//do_steps = 0;
+			//do_steps = 1;
+			z80.IntZ80(z80cpm_memory, INT_IRQ); iii++;
+			z80.registers.IFF |= IFF_1;
+			z80.IntZ80(z80cpm_memory, INT_IRQ);
+		}
+
+
+		if (cpu_clk >= 1) {
+			iii = 0;
+			cpu_clk = 0;
+		}
+
+
+
+
+		if (ide >= 10) {
+			if (z80.hw_ide.save == 1) {
+				hw_ide_save_disk(z80.hw_ide.memory);
+				z80.hw_ide.save = 0;
+			}
+
+			ide = 0;
+		}
+	}
+
+	return NULL;
 }
 
 
@@ -477,7 +521,7 @@ int main(int argc, char** argv)
 
 	z80cpm_keyboard_set_map(&z80cpm_keyboard, keyboard_map);
 
-	
+
 	z80.z80cpm_memory = &z80cpm_memory;
 
 
@@ -501,8 +545,23 @@ int main(int argc, char** argv)
 			z80.registers.PC = 0;
 			z80cpm_memory.rom_disabled = 0;
 		}
-		else
+		else {
+#ifdef _MSC_VER    
+			std::unique_lock<std::mutex> lock(mtx_out);
+#else
+			pthread_mutex_lock(&mtx_out);
+#endif
+
 			z80.keyboard_queue.push(key);
+
+#ifdef _MSC_VER    
+			cv_out.notify_all();
+#else
+			pthread_mutex_unlock(&mtx_out);
+#endif
+
+
+		}
 		//}
 
 		/*
@@ -530,7 +589,7 @@ int main(int argc, char** argv)
 			if (mem_offset - 0x1000 > 0)
 				mem_offset -= 0x1000;
 		}
-	
+
 		if (key == (int)'9') {
 			mem_follow = !mem_follow;
 		}

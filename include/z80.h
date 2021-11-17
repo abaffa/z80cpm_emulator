@@ -48,9 +48,9 @@ public:
     //struct z80_memory memory;
     struct z80_registers registers;
 
-    int IPeriod,ICount; /* Set IPeriod to number of CPU cycles */
+	short IPeriod,ICount; /* Set IPeriod to number of CPU cycles */
                     /* between calls to LoopZ80()          */
-    int IBackup;        /* Private, don't touch                */
+	short IBackup;        /* Private, don't touch                */
     unsigned short IRequest;      /* Set to address of pending IRQ       */
     unsigned char IAutoReset;    /* Set to 1 to autom. reset IRequest   */
     unsigned char TrapBadOps;    /* Set to 1 to warn of illegal opcodes */

@@ -34,7 +34,7 @@ DWORD WINAPI TelnetClientThread(LPVOID pParam)
 void *TelnetClientThread(void *pParam)
 #endif
 {
-	
+
 	HW_TTY_CLIENT *current_client = (HW_TTY_CLIENT*)pParam;
 
 
@@ -45,8 +45,8 @@ void *TelnetClientThread(void *pParam)
 
 	unsigned char lastchar = 0;
 	unsigned char startCMD = 0x00;
-
 #ifdef _MSC_VER    
+
 	SOCKET client = *(current_client)->client;
 #else
 	int client = *(current_client)->client;
@@ -78,7 +78,14 @@ void *TelnetClientThread(void *pParam)
 	//-1 -4 1  = IAC WONT ECHO
 	//-1 -5 36 = IAC WILL ENVIRON
 	//-1 -2 36 = IAC DONT ENVIRON
-	send(client, "\377\375\042\377\373\001\r\n", 6, 0);
+	//FFFD22 FFFB01
+	sprintf(welm, "\377\375\042\377\373\001\r\n");
+	sprintf(welm + strlen(welm), "\377\373\037\377\373\040\377\373\030\377\373\047\377\375\001\377\373\003\377\375\003\r\n");
+	sprintf(welm + strlen(welm), "\377\376\037\377\376\040\377\376\030\377\376\047\377\374\001\r\n");
+	sprintf(welm + strlen(welm), "\377\373\044\r\n");
+	sprintf(welm + strlen(welm), "\377\376\044\r\n");
+	sprintf(welm + strlen(welm), "\377\375\042\377\373\001\r\n");
+	send(client, welm, (int)strlen(welm), 0);
 
 
 	sprintf(welm, "Z80 CPM Emulator\r\n");
@@ -136,7 +143,7 @@ void *TelnetClientThread(void *pParam)
 			else
 				lastSentChar = data;
 
-		}
+	}
 		//std::unique_lock<std::mutex> unlock(current_client->mtx_out);
 
 
@@ -181,7 +188,7 @@ void *TelnetClientThread(void *pParam)
 							*(((HW_TTY_CLIENT*)pParam)->debug_call) = 1;
 						}
 						else {
-							
+
 							current_client->keyboard_queue->push(buff[x]);
 							//current_client->sol1_cpu.microcode.mccycle.int_request = 0x01;
 						}
@@ -203,7 +210,7 @@ void *TelnetClientThread(void *pParam)
 		else if (n == 0)
 			break;
 
-	}
+}
 
 #ifdef _MSC_VER     
 	closesocket(client);
@@ -247,7 +254,7 @@ void *TelnetServerThread(void *pParam)
 	if (server == INVALID_SOCKET)
 	{
 		return 0;
-	}
+}
 #else
 	if ((server = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
 	{
@@ -307,7 +314,7 @@ void *TelnetServerThread(void *pParam)
 #endif
 
 
-		}
+	}
 		else {
 
 			char *buf_send = (char *)"No pool available.\n";
@@ -318,7 +325,7 @@ void *TelnetServerThread(void *pParam)
 			shutdown(client, 2);
 #endif
 
-		}
+	}
 	}
 
 	return 0;
@@ -354,7 +361,7 @@ void HW_TTY::start_server(queue<unsigned char> *keyboard_queue) {
 #endif
 
 	this->started = 1;
-}
+	}
 
 
 
@@ -378,8 +385,8 @@ void HW_TTY::send(unsigned char b) {
 				pthread_mutex_unlock(&this->clients[i].mtx_out);
 #endif
 			}
-		}
 	}
+}
 }
 
 void HW_TTY::print(const char* s) {
@@ -512,11 +519,11 @@ unsigned char HW_TTY::receive() {
 		nanosleep(&ts, NULL);
 
 #endif
-	}
+		}
 	set_input(0);
 
 	return ch;
-}
+	}
 
 
 char HW_TTY::get_char() {
