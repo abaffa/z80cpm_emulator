@@ -535,17 +535,13 @@ int main(int argc, char** argv)
 
 
 
-
+	int last_cold = 0;
 	while (1) {
 		//if (kbhit()) {
 		int key = getch();
-		if (key == '`') {
-			printf("\n");
-			printf("<< COLD RESET >>\n");
-			z80.registers.PC = 0;
-			z80cpm_memory.rom_disabled = 0;
-		}
-		else {
+		if (last_cold == 0 && key == 17) {
+			last_cold = 1;
+
 #ifdef _MSC_VER    
 			std::unique_lock<std::mutex> lock(mtx_out);
 #else
@@ -558,8 +554,60 @@ int main(int argc, char** argv)
 			cv_out.notify_all();
 #else
 			pthread_mutex_unlock(&mtx_out);
+#endif	
+		}
+		else {
+
+			if (last_cold == 1 && key == 3) {
+				do_steps = 1;
+				printf("\n");
+				printf("<< COLD RESET >>\n");
+				z80.z80_reset();
+				z80cpm_memory.rom_disabled = 0;
+				do_steps = 0;
+			}
+			else if (last_cold == 1 && key == 23) {
+				do_steps = 1;
+				printf("\n");
+				printf("<< WARM RESET >>\n");
+
+				free(z80cpm_memory.memory);
+				
+				///////////////////////////////////////////////////////////////////////////
+				z80cpm_memory.memory = (unsigned char*)malloc(Z80CPM_MEMORY_SIZE * sizeof(unsigned char));
+				//memcpy(z80->RdZ80(memory.memory, z80_default_character_set, sizeof(z80_default_character_set));
+
+				for (j = 0; j < Z80CPM_MEMORY_SIZE; j++) 
+					z80cpm_memory.memory[j] = 0x00;
+				
+				memcpy(&z80cpm_memory.rom[0], buf, size);
+				///////////////////////////////////////////////////////////////////////////
+
+				z80.z80_reset();
+				z80cpm_memory.rom_disabled = 0;
+
+				queue<unsigned char> empty;
+				std::swap(z80.keyboard_queue, empty);
+
+				do_steps = 0;
+			}
+			else {
+#ifdef _MSC_VER    
+				std::unique_lock<std::mutex> lock(mtx_out);
+#else
+				pthread_mutex_lock(&mtx_out);
 #endif
 
+				z80.keyboard_queue.push(key);
+
+#ifdef _MSC_VER    
+				cv_out.notify_all();
+#else
+				pthread_mutex_unlock(&mtx_out);
+#endif
+			}
+
+			last_cold = 0;
 
 		}
 		//}
