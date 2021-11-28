@@ -1,9 +1,16 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
 #define EMULATOR_WINDOW_TITLE "Z80CPM Emulator"
 
-#define DEBUG_OPCODE 1
+#define DEBUG_OPCODE 0
+#define SERVER_WEB 0
+#define SERVER_TELNET 1
 
 #define Z80CPM_MEMORY_SIZE 0xFFFF //0x100
 #define Z80_PROGRAM_LOAD_ADDRESS 0X000

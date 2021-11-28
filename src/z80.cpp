@@ -13,6 +13,7 @@
 #define DEBUG_LOG 0
 
 #include "tasm_opcode.h"
+#include "utils.h"
 
 #include <unordered_map>
 using namespace std;
@@ -389,16 +390,6 @@ static const unsigned char Cycles[256] =
 
 
 
-char* strlower(char* s)
-{
-	char* tmp = s;
-
-	for (; *tmp; ++tmp) {
-		*tmp = tolower((unsigned char)*tmp);
-	}
-
-	return s;
-}
 
 void Z80::z80_init()
 {
@@ -469,9 +460,14 @@ void Z80::z80_init()
 	}
 
 
-	//if (this->cpu.config.SERVER) {
+#if SERVER_TELNET == 1
 	this->hw_tty.start_server(&this->keyboard_queue);
-	//}
+#endif
+
+#if SERVER_WEB == 1
+	this->hw_web.start_server(&this->keyboard_queue);
+#endif
+
 
 }
 
@@ -509,6 +505,7 @@ void Z80::z80_reset()
 	this->JumpZ80(this->registers.PC);
 
 
+	this->IAutoReset = 0;
 
 	this->PORT_0002h = 0xFF;
 	this->PORT_FEFEh = 0xFF;
@@ -648,7 +645,12 @@ void Z80::OutZ80(struct z80cpm_memory* z80cpm_memory, unsigned short Port, unsig
 		if ((Port & 0x03) == 0x0) {
 			printf("%c", Value);
 
+#if SERVER_TELNET == 1
 			this->hw_tty.send(Value);
+#endif
+#if SERVER_WEB == 1
+			this->hw_web.new_char(Value);
+#endif
 		}
 		else if ((Port & 0x03) == 0x3) {
 			//printf("%x\n", Value);

@@ -3,25 +3,33 @@
 #include "z80cpm_memory.h"
 
 #include <stdio.h>
-#include <conio.h>
 #include <stdlib.h>
+#include <utils.h>
+
+#ifdef _MSC_VER    
 #include <windows.h>
-#include <chrono>
+#include <conio.h>
+#endif
 
 
 #ifdef __MINGW32__
-#include <time.h>
-#include <pthread.h> 
+#include <conio.h>
 #endif
 
 #if defined(__linux__) || defined(__MINGW32__)
 #include <fcntl.h>
+#include <pthread.h> 
 #else
 #include <mutex> 
 #endif
 
-
+#if defined(__linux__) || defined(__MINGW32__)
+#include <time.h>
+#else
+#include <chrono>
 using namespace std::chrono;
+
+#endif
 
 const unsigned int keyboard_map[Z80CPM_TOTAL_KEYS] = {
 	(int)'1', (int)'2', (int)'3', (int)'4', (int)'5', (int)'6', (int)'7', (int)'8', (int)'9', (int)'0',
@@ -53,7 +61,7 @@ condition_variable cv_out;
 pthread_mutex_t mtx_out;
 #endif
 
-
+#ifdef _MSC_VER    
 void cls(HANDLE hConsole)
 {
 	COORD coordScreen = { 0, 0 };    // home for the cursor
@@ -98,6 +106,8 @@ void cls(HANDLE hConsole)
 	// Put the cursor at its home coordinates.
 	SetConsoleCursorPosition(hConsole, coordScreen);
 }
+
+#endif
 
 #define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
 #define BYTE_TO_BINARY(byte)  \
@@ -193,11 +203,10 @@ void cpu_print(Z80& z80, struct z80cpm_memory* z80cpm_memory) {
 
 
 int do_steps = 0;
-
-#ifdef __MINGW32__
-void *run_thread(void *vargp)
-#elif _MSC_VER        
+#if _MSC_VER        
 DWORD WINAPI run_thread(LPVOID vargp)
+#else
+void *run_thread(void *vargp)
 #endif
 {
 
@@ -205,8 +214,13 @@ DWORD WINAPI run_thread(LPVOID vargp)
 	struct z80cpm_memory *z80cpm_memory = z80.z80cpm_memory;
 	queue<unsigned char> *keyboard_queue = &z80.keyboard_queue;
 
+#ifdef _MSC_VER    
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 	cls(hConsole);
+#endif
+
+	int oldc = 0;
+	int oldd = 1;
 
 	double deltaTime = 0;
 	double frame = 0;
@@ -235,11 +249,11 @@ DWORD WINAPI run_thread(LPVOID vargp)
 	unsigned char bp_opcode2 = 0x78;
 	unsigned short breakpoint = 0x65B; //0x194; //0x168; //0x0154; 143 // 141
 
-#ifdef __MINGW32__
-	struct timespec tstart = { 0,0 }, tend = { 0,0 };
-#elif _MSC_VER    
+#if _MSC_VER    
 	auto tstart = high_resolution_clock::now();
 	auto tend = high_resolution_clock::now();
+#else
+	struct timespec tstart = { 0,0 }, tend = { 0,0 };
 #endif 
 	while (1) {
 
@@ -251,32 +265,40 @@ DWORD WINAPI run_thread(LPVOID vargp)
 		*/
 
 
-#ifdef __MINGW32__
-		clock_gettime(CLOCK_MONOTONIC, &tend);
-		deltaTime = ((double)tend.tv_sec + 1.0e-9*tend.tv_nsec) - ((double)tstart.tv_sec + 1.0e-9*tstart.tv_nsec);
-		clock_gettime(CLOCK_MONOTONIC, &tstart);
-#elif _MSC_VER        
+#if _MSC_VER
 		tend = high_resolution_clock::now();
 		deltaTime = duration_cast<nanoseconds>(tend - tstart).count() * 1e-9;
 		tstart = high_resolution_clock::now();
+#else
+		clock_gettime(CLOCK_MONOTONIC, &tend);
+		deltaTime = ((double)tend.tv_sec + 1.0e-9*tend.tv_nsec) - ((double)tstart.tv_sec + 1.0e-9*tstart.tv_nsec);
+		clock_gettime(CLOCK_MONOTONIC, &tstart);
+
 #endif 
 
 		frame += deltaTime;
-		keyboard += deltaTime;
+		//keyboard += deltaTime;
 		ide += deltaTime;
 		cpu += deltaTime;
 		cpu_clk += deltaTime;
 
-		
-
+		 
 		if ((z80.registers.IFF & IFF_HALT) == 0x0 &&
 			((!do_steps && cpu >= speed) || (do_steps && step))) {
 
+			/*
+			if (oldd != z80.ICount) {
+				printf("%x\t", z80.ICount);
+				printf(BYTE_TO_BINARY_PATTERN, BYTE_TO_BINARY(z80.ICount));
+				printf("\n");
+				oldd = z80.ICount;
+			}
+	
+			*/
 
-
-	//		if (keyboard >= 0.0005) {
-
+			
 				if (wait == 0 && do_steps == 0 && z80.IRequest == INT_NONE && z80.PORT_0002h == 0xFF && !(z80.registers.IFF & IFF_EI) && (z80.registers.IFF & IFF_1) && (z80.registers.IFF & IFF_2) && !keyboard_queue->empty()) {
+				///if (z80.ICount < 0 && do_steps == 0 && z80.IRequest == INT_NONE && z80.PORT_0002h == 0xFF && ((z80.registers.IFF & 0b00001101) == 0b00001101) && !keyboard_queue->empty()) {
 
 
 #ifdef _MSC_VER    
@@ -297,24 +319,42 @@ DWORD WINAPI run_thread(LPVOID vargp)
 
 					//if (key != (int)'7' && key != (int)'8' && key != (int)'9') {
 
-
-					z80.registers.IFF &= ~IFF_2;
 					z80.PORT_0002h = key;
 					z80.IRequest = z80.keyboard_int;
+					z80.registers.IFF |= IFF_IM1;
 					//z80.registers.IFF &= ~IFF_1;
 					//z80.registers.IFF |= IFF_EI;
 					//IntZ80(z80, z80cpm_memory->memory, 0x60);
 					wait = 1;
+					//oldc = 0;
 				}
+				//else if (z80.ICount > 0 && z80.IRequest != INT_NONE && z80.PORT_0002h == 0xFF) {
+				//	z80.IRequest = INT_NONE;
+				//}
+				
 				else if (wait < 700 && wait > 0 && do_steps == 0 && z80.IRequest == INT_NONE && z80.PORT_0002h == 0xFF && !(z80.registers.IFF & IFF_EI) && (z80.registers.IFF & IFF_1) && (z80.registers.IFF & IFF_2) && !keyboard_queue->empty())
 					wait++;
 				else if (do_steps == 0 && z80.IRequest == INT_NONE && z80.PORT_0002h == 0xFF && !(z80.registers.IFF & IFF_EI) && (z80.registers.IFF & IFF_1) && (z80.registers.IFF & IFF_2) && !keyboard_queue->empty())
 					wait = 0;
+					
+					//keyboard = 0;
+				/*
+					if (wait == 1 && z80.registers.IFF == 0xd && oldc < 2) {
+						oldc++;
+					}
 
-				keyboard = 0;
-//			}
+					else if (wait < 100 && wait > 0)
+						wait++;
+					else if (wait > 0){
+						wait = 0;
+					}
+					*/
+
+			//}
 
 
+
+			
 			cpu_exec(z80, z80cpm_memory); iii++;
 			cpu = 0;
 
@@ -404,12 +444,16 @@ DWORD WINAPI run_thread(LPVOID vargp)
 			//cls(hConsole);
 
 			if (show_debug) {
+#if _MSC_VER
 				COORD pos = { 0, 0 };
 				SetConsoleCursorPosition(hConsole, pos);
+#endif
 				printf("                                                                                                                                                      \r\n");
 				printf("                                                                                                                                                      \n");
 				printf("                                                                                                                                                      \n");
+#if _MSC_VER
 				SetConsoleCursorPosition(hConsole, pos);
+#endif
 				printf("%.3fMHz - %g\n", ((float)iii) / 1000000, speed);
 				printf("%s", z80.last_op_desc);
 				cpu_print(z80, z80cpm_memory);
@@ -525,12 +569,12 @@ int main(int argc, char** argv)
 	z80.z80cpm_memory = &z80cpm_memory;
 
 
-#ifdef __MINGW32__
-	pthread_t tid;
-	pthread_create(&tid, NULL, run_thread, (void *)&z80cpm_computer);
-#elif _MSC_VER        
+#if _MSC_VER        
 	DWORD tid;
 	HANDLE myHandle = CreateThread(0, 0, run_thread, &z80, 0, &tid);
+#else
+	pthread_t tid;
+	pthread_create(&tid, NULL, run_thread, (void *)&z80);
 #endif
 
 
@@ -562,6 +606,19 @@ int main(int argc, char** argv)
 				do_steps = 1;
 				printf("\n");
 				printf("<< COLD RESET >>\n");
+
+				//free(z80cpm_memory.memory);
+
+				///////////////////////////////////////////////////////////////////////////
+				z80cpm_memory.memory = (unsigned char*)malloc(Z80CPM_MEMORY_SIZE * sizeof(unsigned char));
+				//memcpy(z80->RdZ80(memory.memory, z80_default_character_set, sizeof(z80_default_character_set));
+
+				for (j = 0; j < Z80CPM_MEMORY_SIZE; j++)
+					z80cpm_memory.memory[j] = 0x00;
+
+				memcpy(&z80cpm_memory.rom[0], buf, size);
+				///////////////////////////////////////////////////////////////////////////
+
 				z80.z80_reset();
 				z80cpm_memory.rom_disabled = 0;
 				do_steps = 0;
@@ -571,20 +628,8 @@ int main(int argc, char** argv)
 				printf("\n");
 				printf("<< WARM RESET >>\n");
 
-				free(z80cpm_memory.memory);
-				
-				///////////////////////////////////////////////////////////////////////////
-				z80cpm_memory.memory = (unsigned char*)malloc(Z80CPM_MEMORY_SIZE * sizeof(unsigned char));
-				//memcpy(z80->RdZ80(memory.memory, z80_default_character_set, sizeof(z80_default_character_set));
-
-				for (j = 0; j < Z80CPM_MEMORY_SIZE; j++) 
-					z80cpm_memory.memory[j] = 0x00;
-				
-				memcpy(&z80cpm_memory.rom[0], buf, size);
-				///////////////////////////////////////////////////////////////////////////
-
 				z80.z80_reset();
-				z80cpm_memory.rom_disabled = 0;
+				//z80cpm_memory.rom_disabled = 0;
 
 				queue<unsigned char> empty;
 				std::swap(z80.keyboard_queue, empty);

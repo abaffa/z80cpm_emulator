@@ -22,25 +22,3 @@ Tasm_Opcode::Tasm_Opcode(string opcode, string desc, int size) {
 	this->desc = desc;
 	this->size = size;
 }
-
-
-void save_to_log(char *s, FILE *fa, char *str)
-{
-
-	//FILE *fa = fopen("File1.txt", "a");
-	if (fa == NULL)
-	{
-		if (s == NULL)
-			printf("can not open target file\n");
-		else
-			sprintf(s, "can not open target file\n");
-		exit(1);
-	}
-
-	fprintf(fa, "%s", str);
-	fflush(fa);
-	//fputc(str, fa);
-
-//fclose(fa);
-
-}

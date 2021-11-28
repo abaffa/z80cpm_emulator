@@ -6,7 +6,14 @@
 #include "z80_registers.h"
 #include <stddef.h>
 #include "hw_ide.h"
+
+#if SERVER_TELNET == 1
 #include "hw_tty.h"
+#endif
+
+#if SERVER_WEB == 1
+#include "hw_web.h"
+#endif
 
 #include <queue>
 using namespace std;
@@ -75,8 +82,16 @@ public:
 
 	struct z80cpm_memory *z80cpm_memory;
 	struct hw_ide hw_ide;
+
+#if SERVER_TELNET == 1
 	HW_TTY hw_tty;
-	
+#endif
+
+#if SERVER_WEB == 1
+	HW_WEB hw_web;
+#endif
+
+
 	queue<unsigned char> keyboard_queue;
 
 	void z80_init();
@@ -95,10 +110,10 @@ public:
 	void OutZ80(struct z80cpm_memory* z80cpm_memory, unsigned short Port, unsigned char Value);
 
 private:
-	unsigned char Z80::OpZ80(struct z80cpm_memory* z80cpm_memory, unsigned short A);
-	unsigned short Z80::LoopZ80();
+	unsigned char OpZ80(struct z80cpm_memory* z80cpm_memory, unsigned short A);
+	unsigned short LoopZ80();
 
-	void Z80::debug_opcode(char *op, char *desc);
+	void debug_opcode(char *op, char *desc);
 	void debug_opcode_reg_word(struct z80cpm_memory* z80cpm_memory, char *op, char *desc);
 	void debug_opcode_reg_byte(struct z80cpm_memory* z80cpm_memory, char *op, char *desc);
 	void debug_opcode_reg_byte_byte(struct z80cpm_memory* z80cpm_memory, char *op, char *desc);

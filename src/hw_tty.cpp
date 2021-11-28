@@ -18,6 +18,7 @@
 #include "hw_tty.h"
 #include "z80.h"
 #include <stdio.h>
+#include <utils.h>
 
 #ifdef _MSC_VER    
 #include <windows.h>
@@ -246,7 +247,7 @@ void *TelnetServerThread(void *pParam)
 #else
 	int server;
 #endif
-	local.sin_family = AF_INET;
+	local.sin_family = AF_INET; 
 	local.sin_addr.s_addr = INADDR_ANY;
 	local.sin_port = htons((u_short)SERVER_PORT);
 #ifdef _MSC_VER   
@@ -266,7 +267,7 @@ void *TelnetServerThread(void *pParam)
 		return 0;
 	}
 	if (listen(server, 10) != 0)
-	{
+	{	
 		return 0;
 	}
 

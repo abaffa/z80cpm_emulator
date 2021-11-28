@@ -35,6 +35,4 @@ public:
 	Tasm_Opcode(string opcode, string desc, int size);
 };
 
-void save_to_log(char *s, FILE *fa, char *str);
-
 #endif

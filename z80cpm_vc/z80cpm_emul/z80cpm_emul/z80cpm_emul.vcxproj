@@ -21,8 +21,12 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\src\hw_ide.cpp" />
     <ClCompile Include="..\..\..\src\hw_tty.cpp" />
+    <ClCompile Include="..\..\..\src\hw_web.cpp" />
+    <ClCompile Include="..\..\..\src\linkedlist.cpp" />
     <ClCompile Include="..\..\..\src\main.cpp" />
+    <ClCompile Include="..\..\..\src\queue_ll.cpp" />
     <ClCompile Include="..\..\..\src\tasm_opcode.cpp" />
+    <ClCompile Include="..\..\..\src\utils.cpp" />
     <ClCompile Include="..\..\..\src\z80.cpp" />
     <ClCompile Include="..\..\..\src\z80cpm_memory.cpp" />
     <ClCompile Include="..\..\..\src\z80cpm_keyboard.cpp" />
@@ -34,7 +38,11 @@
     <ClInclude Include="..\..\..\include\hw_ide.h" />
     <ClInclude Include="..\..\..\include\hw_tty.h" />
     <ClInclude Include="..\..\..\include\hw_tty_client.h" />
+    <ClInclude Include="..\..\..\include\hw_web.h" />
+    <ClInclude Include="..\..\..\include\linkedlist.h" />
+    <ClInclude Include="..\..\..\include\queue_ll.h" />
     <ClInclude Include="..\..\..\include\tasm_opcode.h" />
+    <ClInclude Include="..\..\..\include\utils.h" />
     <ClInclude Include="..\..\..\include\z80.h" />
     <ClInclude Include="..\..\..\include\z80_exec_main_codes.h" />
     <ClInclude Include="..\..\..\include\z80_extended_code_CB.h" />
