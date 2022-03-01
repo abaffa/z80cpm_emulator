@@ -1,5 +1,7 @@
-# z80cpm_emulator
+# Z80 CPM Emulator [![Hackaday.io](https://img.shields.io/badge/Hackaday.io--blue.svg)](https://hackaday.io/project/184235-60x25-minimal-terminal)
 This is a Z80 CPM Emulator - based on CP/M on breadboard by Grant Searle (http://searle.x10host.com/cpm/index.html)
+
+The emulator was the landmark for [Baffa-2 Homebrew Microcomputer Project](https://baffa-2.baffasoft.com.br)
 
 CP/M Disk Manager is available at https://github.com/abaffa/cpm_disk_manager
 
